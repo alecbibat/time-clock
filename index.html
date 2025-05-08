@@ -16,17 +16,24 @@
     <div id="denver-clock">Loading...</div>
   </div>
 
-  <!-- Divider removed -->
+  <div id="rmnp-time">
+    <h2>Rocky Mountain National Park Time</h2>
+    <div id="rmnp-clock">Loading...</div>
+  </div>
 
   <div id="timezone-info">
     <div id="zone-times"></div>
   </div>
 
   <script>
-    const map = L.map('map').setView([20, 0], 2);
+    const map = L.map('map').setView([40.3428, -105.6836], 4); // Center on RMNP
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
+
+    // Add pin for RMNP
+    const rmnpMarker = L.marker([40.3428, -105.6836]).addTo(map)
+      .bindPopup('Rocky Mountain National Park');
 
     const zoneColors = {
       'UTC': '#ffadad',
@@ -80,8 +87,23 @@
         document.getElementById("denver-clock").textContent = "unsupported";
       }
     }
-    setInterval(updateDenverClock, 1000);
+
+    function updateRMNPClock() {
+      try {
+        const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
+        document.getElementById("rmnp-clock").textContent = time;
+      } catch (e) {
+        document.getElementById("rmnp-clock").textContent = "unsupported";
+      }
+    }
+
+    setInterval(() => {
+      updateDenverClock();
+      updateRMNPClock();
+    }, 1000);
+
     updateDenverClock();
+    updateRMNPClock();
   </script>
 
   <script src="timezones.js"></script>
