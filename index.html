@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Time Zone Map + NASA FIRMS Fire Overlay</title>
+  <title>Time Zone Map + FIRMS + Filters</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
@@ -33,7 +33,6 @@
       text-align: center;
       z-index: 1001;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      margin-bottom: 30px;
     }
 
     #denver-time h1 {
@@ -77,7 +76,7 @@
       flex: 1 1 auto;
     }
 
-    /* Slide-in filter menu */
+    /* Sidebar button */
     #filter-toggle {
       position: absolute;
       top: 10px;
@@ -92,6 +91,7 @@
       box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
 
+    /* Sidebar */
     #filter-menu {
       position: absolute;
       top: 0;
@@ -115,11 +115,13 @@
       font-size: 1.3em;
     }
 
-    #firms-toggle {
+    #firms-toggle,
+    #timezone-toggle {
       margin-top: 15px;
     }
 
-    #firms-toggle input {
+    #firms-toggle input,
+    #timezone-toggle input {
       margin-right: 10px;
     }
   </style>
@@ -136,17 +138,25 @@
     <div id="zone-times"></div>
   </div>
 
-  <!-- Filter Sidebar -->
+  <!-- Sidebar Toggle Button -->
   <div id="filter-toggle">☰</div>
+
+  <!-- Sidebar Menu -->
   <div id="filter-menu">
-    <h3>Fire Layer Controls</h3>
+    <h3>Layer Controls</h3>
     <div id="firms-toggle">
-      <input type="checkbox" id="firms-checkbox" />
+      <input type="checkbox" id="firms-checkbox">
       <label for="firms-checkbox">Show FIRMS Fire Layer</label>
+    </div>
+    <div id="timezone-toggle">
+      <input type="checkbox" id="timezone-checkbox" checked>
+      <label for="timezone-checkbox">Show Time Zone Overlays</label>
     </div>
   </div>
 
   <script>
+    let timezoneLayer;
+
     const map = L.map('map').setView([40.3428, -105.6836], 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -155,7 +165,7 @@
     // Marker for Rocky Mountain National Park
     L.marker([40.3428, -105.6836]).addTo(map).bindPopup('Rocky Mountain National Park');
 
-    // FIRMS WMS fire layer
+    // FIRMS fire WMS layer
     const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
       layers: 'fires_viirs_24',
       format: 'image/png',
@@ -167,19 +177,18 @@
     firmsLayer.setOpacity(0);
     firmsLayer.addTo(map);
 
-    // FIRMS layer toggle
+    // FIRMS toggle
     document.getElementById('firms-checkbox').addEventListener('change', function(e) {
       firmsLayer.setOpacity(e.target.checked ? 1 : 0);
     });
 
-    // Filter sidebar toggle
+    // Sidebar toggle
     const filterMenu = document.getElementById('filter-menu');
-    const filterToggle = document.getElementById('filter-toggle');
-    filterToggle.addEventListener('click', () => {
+    document.getElementById('filter-toggle').addEventListener('click', () => {
       filterMenu.classList.toggle('show');
     });
 
-    // Denver clock
+    // Clock updater
     function updateDenverClock() {
       try {
         const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -191,7 +200,7 @@
     setInterval(updateDenverClock, 1000);
     updateDenverClock();
 
-    // Time zone color coding
+    // Time zone colors
     const zoneColors = {
       'UTC': '#ffadad',
       'America/New_York': '#ffd6a5',
@@ -205,11 +214,11 @@
       'Australia/Sydney': '#a0c4ff'
     };
 
-    // Load timezone polygons
+    // Load timezone overlay
     fetch('timezones_merged.geojson')
       .then(response => response.json())
       .then(data => {
-        L.geoJSON(data, {
+        timezoneLayer = L.geoJSON(data, {
           style: function(feature) {
             const zone = feature.properties.zone;
             return {
@@ -234,8 +243,20 @@
               });
             }
           }
-        }).addTo(map);
+        });
+        timezoneLayer.addTo(map);
       });
+
+    // Toggle timezone layer
+    document.getElementById('timezone-checkbox').addEventListener('change', function(e) {
+      if (timezoneLayer) {
+        if (e.target.checked) {
+          timezoneLayer.addTo(map);
+        } else {
+          map.removeLayer(timezoneLayer);
+        }
+      }
+    });
   </script>
 
   <script src="timezones.js"></script>
