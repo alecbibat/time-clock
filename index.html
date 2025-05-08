@@ -88,7 +88,8 @@
     updateDenverClock();
 
     // FIRMS NASA fire overlay (last 24h)
-    fetch('https://firms.modaps.eosdis.nasa.gov/data/active_fire/c6.1/geojson/MODIS_C6_1_Global_24h.geojson')
+    fetch('https://corsproxy.io/?https://firms.modaps.eosdis.nasa.gov/data/active_fire/c6.1/geojson/MODIS_C6_1_Global_24h.geojson')
+
       .then(res => res.json())
       .then(data => {
         const fireLayer = L.geoJSON(data, {
