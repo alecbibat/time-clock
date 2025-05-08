@@ -37,16 +37,7 @@ body {
   margin-top: 10px;
 }
 
-#divider {
-  position: absolute;
-  top: 130px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 1px;
-  background-color: #ccc;
-  z-index: 1001;
-}
+/* Divider removed */
 
 #timezone-info {
   position: absolute;
