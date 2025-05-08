@@ -2,31 +2,17 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Time Zone Map + FIRMS + Filters</title>
+  <title>Time Zone Map + FIRMS + Lightning + Filters</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-    }
-
-    #map {
-      height: 100vh;
-      width: 100%;
-      z-index: 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
+    body { margin: 0; font-family: sans-serif; }
+    #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 0; }
     #denver-time {
       position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.9);
       padding: 20px 40px;
       border-radius: 10px;
@@ -34,53 +20,29 @@
       z-index: 1001;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-
-    #denver-time h1 {
-      margin: 0;
-      font-size: 2em;
-    }
-
-    #denver-clock {
-      font-size: 3em;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
+    #denver-time h1 { margin: 0; font-size: 2em; }
+    #denver-clock { font-size: 3em; font-weight: bold; margin-top: 10px; }
     #timezone-info {
-      position: absolute;
-      top: 150px;
-      left: 50%;
+      position: absolute; top: 150px; left: 50%;
       transform: translateX(-50%);
-      z-index: 1000;
-      width: 100%;
+      z-index: 1000; width: 100%;
     }
-
     #zone-times {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      max-width: 90%;
-      margin: auto;
-      padding-top: 20px;
+      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+      max-width: 90%; margin: auto; padding-top: 20px;
     }
-
     .timezone-box {
-      background: white;
-      padding: 10px 15px;
+      background: white; padding: 10px 15px;
       border-radius: 8px;
       box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
-      text-align: center;
-      min-width: 150px;
-      font-size: 1em;
+      text-align: center; min-width: 150px; font-size: 1em;
       flex: 1 1 auto;
     }
 
-    /* Sidebar button */
+    /* Sidebar toggle */
     #filter-toggle {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 10px; right: 10px;
       z-index: 10001;
       cursor: pointer;
       background: white;
@@ -91,13 +53,11 @@
       box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
 
-    /* Sidebar */
+    /* Sidebar menu */
     #filter-menu {
       position: absolute;
-      top: 0;
-      right: 0;
-      height: 100%;
-      width: 250px;
+      top: 0; right: 0;
+      height: 100%; width: 250px;
       background-color: rgba(255, 255, 255, 0.95);
       padding: 20px;
       box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
@@ -106,24 +66,10 @@
       z-index: 10000;
     }
 
-    #filter-menu.show {
-      transform: translateX(0);
-    }
-
-    #filter-menu h3 {
-      margin-top: 0;
-      font-size: 1.3em;
-    }
-
-    #firms-toggle,
-    #timezone-toggle {
-      margin-top: 15px;
-    }
-
-    #firms-toggle input,
-    #timezone-toggle input {
-      margin-right: 10px;
-    }
+    #filter-menu.show { transform: translateX(0); }
+    #filter-menu h3 { margin-top: 0; font-size: 1.3em; }
+    #filter-menu div { margin-top: 15px; }
+    #filter-menu input { margin-right: 10px; }
   </style>
 </head>
 <body>
@@ -138,19 +84,23 @@
     <div id="zone-times"></div>
   </div>
 
-  <!-- Sidebar Toggle Button -->
+  <!-- Sidebar Button -->
   <div id="filter-toggle">☰</div>
 
   <!-- Sidebar Menu -->
   <div id="filter-menu">
     <h3>Layer Controls</h3>
-    <div id="firms-toggle">
+    <div>
       <input type="checkbox" id="firms-checkbox">
       <label for="firms-checkbox">Show FIRMS Fire Layer</label>
     </div>
-    <div id="timezone-toggle">
+    <div>
       <input type="checkbox" id="timezone-checkbox" checked>
       <label for="timezone-checkbox">Show Time Zone Overlays</label>
+    </div>
+    <div>
+      <input type="checkbox" id="lightning-checkbox">
+      <label for="lightning-checkbox">Show Lightning Strikes</label>
     </div>
   </div>
 
@@ -165,7 +115,7 @@
     // Marker for Rocky Mountain National Park
     L.marker([40.3428, -105.6836]).addTo(map).bindPopup('Rocky Mountain National Park');
 
-    // FIRMS fire WMS layer
+    // FIRMS Fire Layer
     const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
       layers: 'fires_viirs_24',
       format: 'image/png',
@@ -173,13 +123,13 @@
       attribution: 'NASA FIRMS',
       MAP_KEY: '98816b6dadda86b7a77d0477889142db'
     });
-
     firmsLayer.setOpacity(0);
     firmsLayer.addTo(map);
 
-    // FIRMS toggle
-    document.getElementById('firms-checkbox').addEventListener('change', function(e) {
-      firmsLayer.setOpacity(e.target.checked ? 1 : 0);
+    // Lightning Strikes Layer (Tile)
+    const lightningLayer = L.tileLayer('https://tiles.lightningmaps.org/static/tiles/{z}/{x}/{y}.png', {
+      attribution: '© Blitzortung.org',
+      opacity: 0.7
     });
 
     // Sidebar toggle
@@ -188,7 +138,32 @@
       filterMenu.classList.toggle('show');
     });
 
-    // Clock updater
+    // FIRMS toggle
+    document.getElementById('firms-checkbox').addEventListener('change', e => {
+      firmsLayer.setOpacity(e.target.checked ? 1 : 0);
+    });
+
+    // Lightning toggle
+    document.getElementById('lightning-checkbox').addEventListener('change', e => {
+      if (e.target.checked) {
+        lightningLayer.addTo(map);
+      } else {
+        map.removeLayer(lightningLayer);
+      }
+    });
+
+    // Timezone overlay toggle
+    document.getElementById('timezone-checkbox').addEventListener('change', e => {
+      if (timezoneLayer) {
+        if (e.target.checked) {
+          timezoneLayer.addTo(map);
+        } else {
+          map.removeLayer(timezoneLayer);
+        }
+      }
+    });
+
+    // Denver clock updater
     function updateDenverClock() {
       try {
         const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -214,31 +189,28 @@
       'Australia/Sydney': '#a0c4ff'
     };
 
-    // Load timezone overlay
+    // Load timezone overlays
     fetch('timezones_merged.geojson')
       .then(response => response.json())
       .then(data => {
         timezoneLayer = L.geoJSON(data, {
-          style: function(feature) {
-            const zone = feature.properties.zone;
-            return {
-              color: '#555',
-              weight: 1,
-              fillColor: zoneColors[zone] || '#cccccc',
-              fillOpacity: 0.5
-            };
-          },
-          onEachFeature: function (feature, layer) {
-            if (feature.properties && feature.properties.zone) {
-              const popupDiv = document.createElement('div');
-              popupDiv.innerHTML = `<strong>${feature.properties.zone}</strong><br><span id="${feature.properties.zone.replace(/\W/g, '')}-time">Loading...</span>`;
-              layer.bindPopup(popupDiv);
+          style: feature => ({
+            color: '#555',
+            weight: 1,
+            fillColor: zoneColors[feature.properties.zone] || '#cccccc',
+            fillOpacity: 0.5
+          }),
+          onEachFeature: (feature, layer) => {
+            if (feature.properties?.zone) {
+              const zoneId = feature.properties.zone.replace(/\W/g, '');
+              const popup = `<strong>${feature.properties.zone}</strong><br><span id="${zoneId}-time">Loading...</span>`;
+              layer.bindPopup(popup);
               layer.on('popupopen', () => {
                 try {
                   const time = new Date().toLocaleTimeString("en-US", { timeZone: feature.properties.zone });
-                  document.getElementById(`${feature.properties.zone.replace(/\W/g, '')}-time`).textContent = time;
-                } catch (e) {
-                  document.getElementById(`${feature.properties.zone.replace(/\W/g, '')}-time`).textContent = 'unsupported';
+                  document.getElementById(`${zoneId}-time`).textContent = time;
+                } catch {
+                  document.getElementById(`${zoneId}-time`).textContent = 'unsupported';
                 }
               });
             }
@@ -246,17 +218,6 @@
         });
         timezoneLayer.addTo(map);
       });
-
-    // Toggle timezone layer
-    document.getElementById('timezone-checkbox').addEventListener('change', function(e) {
-      if (timezoneLayer) {
-        if (e.target.checked) {
-          timezoneLayer.addTo(map);
-        } else {
-          map.removeLayer(timezoneLayer);
-        }
-      }
-    });
   </script>
 
   <script src="timezones.js"></script>
