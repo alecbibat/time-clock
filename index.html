@@ -16,7 +16,12 @@
     <div id="denver-clock">Loading...</div>
   </div>
 
-  <div id="divider"></div>
+  <!-- 🔍 Search bar -->
+  <div id="search-bar">
+    <input id="search-input" type="text" placeholder="Enter a city..." />
+    <button onclick="searchCity()">Search</button>
+  </div>
+  <div id="search-result"></div>
 
   <div id="timezone-info">
     <div id="zone-times"></div>
@@ -41,12 +46,12 @@
       'Australia/Sydney': '#a0c4ff'
     };
 
-    fetch('timezones_merged.geojson')
+    fetch('timezones.geojson')
       .then(response => response.json())
       .then(data => {
         L.geoJSON(data, {
           style: function(feature) {
-            const zone = feature.properties.zone;
+            const zone = feature.properties.tzid;
             return {
               color: '#555',
               weight: 1,
@@ -55,16 +60,16 @@
             };
           },
           onEachFeature: function (feature, layer) {
-            if (feature.properties && feature.properties.zone) {
+            if (feature.properties && feature.properties.tzid) {
               const popupDiv = document.createElement('div');
-              popupDiv.innerHTML = `<strong>${feature.properties.zone}</strong><br><span id="${feature.properties.zone.replace(/\W/g, '')}-time">Loading...</span>`;
+              popupDiv.innerHTML = `<strong>${feature.properties.tzid}</strong><br><span id="${feature.properties.tzid.replace(/\\W/g, '')}-time">Loading...</span>`;
               layer.bindPopup(popupDiv);
               layer.on('popupopen', () => {
                 try {
-                  const time = new Date().toLocaleTimeString("en-US", { timeZone: feature.properties.zone });
-                  document.getElementById(`${feature.properties.zone.replace(/\W/g, '')}-time`).textContent = time;
+                  const time = new Date().toLocaleTimeString("en-US", { timeZone: feature.properties.tzid });
+                  document.getElementById(`${feature.properties.tzid.replace(/\\W/g, '')}-time`).textContent = time;
                 } catch (e) {
-                  document.getElementById(`${feature.properties.zone.replace(/\W/g, '')}-time`).textContent = 'unsupported';
+                  document.getElementById(`${feature.properties.tzid.replace(/\\W/g, '')}-time`).textContent = 'unsupported';
                 }
               });
             }
@@ -73,17 +78,3 @@
       });
 
     function updateDenverClock() {
-      try {
-        const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
-        document.getElementById("denver-clock").textContent = time;
-      } catch (e) {
-        document.getElementById("denver-clock").textContent = "unsupported";
-      }
-    }
-    setInterval(updateDenverClock, 1000);
-    updateDenverClock();
-  </script>
-
-  <script src="timezones.js"></script>
-</body>
-</html>
