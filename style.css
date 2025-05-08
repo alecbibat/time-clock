@@ -34,6 +34,17 @@ body {
   margin-top: 10px;
 }
 
+#divider {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background-color: #ccc;
+  z-index: 1000;
+}
+
 #timezone-info {
   position: absolute;
   top: 140px;
