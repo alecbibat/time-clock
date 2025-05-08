@@ -11,7 +11,7 @@ body {
 
 #denver-time {
   position: absolute;
-  top: 10px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.9);
@@ -20,6 +20,7 @@ body {
   text-align: center;
   z-index: 1000;
   box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  margin-bottom: 30px;
 }
 
 #denver-time h1 {
@@ -35,7 +36,7 @@ body {
 
 #timezone-info {
   position: absolute;
-  top: 150px;
+  top: 140px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -49,6 +50,7 @@ body {
   justify-content: center;
   max-width: 90%;
   margin: auto;
+  padding-top: 20px;
 }
 
 .timezone-box {
