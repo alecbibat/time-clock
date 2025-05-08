@@ -28,7 +28,7 @@
       'Australia/Sydney': '#9bf6ff'
     };
 
-    fetch('timezones.geojson')
+    fetch('timezones_merged.geojson')
       .then(response => response.json())
       .then(data => {
         L.geoJSON(data, {
