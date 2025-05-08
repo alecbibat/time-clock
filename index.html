@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Time Zone Map</title>
+  <title>Time Zone Map + Live Fires</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
@@ -27,9 +27,9 @@
     }).addTo(map);
 
     // Add pin for RMNP
-    const rmnpMarker = L.marker([40.3428, -105.6836]).addTo(map)
-      .bindPopup('Rocky Mountain National Park');
+    L.marker([40.3428, -105.6836]).addTo(map).bindPopup('Rocky Mountain National Park');
 
+    // Zone colors for overlay fill
     const zoneColors = {
       'UTC': '#ffadad',
       'America/New_York': '#ffd6a5',
@@ -43,6 +43,7 @@
       'Australia/Sydney': '#a0c4ff'
     };
 
+    // Load and show timezone polygons
     fetch('timezones_merged.geojson')
       .then(response => response.json())
       .then(data => {
@@ -74,6 +75,7 @@
         }).addTo(map);
       });
 
+    // Denver GSOC time updater
     function updateDenverClock() {
       try {
         const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -82,23 +84,39 @@
         document.getElementById("denver-clock").textContent = "unsupported";
       }
     }
-
-    function updateRMNPClock() {
-      try {
-        const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
-        document.getElementById("rmnp-clock").textContent = time;
-      } catch (e) {
-        document.getElementById("rmnp-clock").textContent = "unsupported";
-      }
-    }
-
-    setInterval(() => {
-      updateDenverClock();
-      updateRMNPClock();
-    }, 1000);
-
+    setInterval(updateDenverClock, 1000);
     updateDenverClock();
-    updateRMNPClock();
+
+    // FIRMS NASA fire overlay (last 24h)
+    fetch('https://firms.modaps.eosdis.nasa.gov/data/active_fire/c6.1/geojson/MODIS_C6_1_Global_24h.geojson')
+      .then(res => res.json())
+      .then(data => {
+        const fireLayer = L.geoJSON(data, {
+          pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+              radius: 4,
+              fillColor: 'red',
+              color: 'darkred',
+              weight: 0.5,
+              opacity: 1,
+              fillOpacity: 0.8
+            });
+          },
+          onEachFeature: function (feature, layer) {
+            const props = feature.properties;
+            const info = `
+              <strong>Fire Detection</strong><br>
+              Brightness: ${props.brightness}<br>
+              Confidence: ${props.confidence}<br>
+              Date: ${props.acq_date} ${props.acq_time}
+            `;
+            layer.bindPopup(info);
+          }
+        });
+        fireLayer.addTo(map);
+      });
+
+    // Timezone boxes from JS file
   </script>
 
   <script src="timezones.js"></script>
