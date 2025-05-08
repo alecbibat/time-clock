@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "zone": "UTC" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10, 90], [10, 90], [10, -90], [-10, -90], [-10, 90]
+        ]]
+      }
+    }
+  ]
+}
