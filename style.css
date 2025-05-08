@@ -7,9 +7,6 @@ body {
 #map {
   height: 100vh;
   width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
 }
 
 #denver-time {
@@ -21,7 +18,7 @@ body {
   padding: 20px 40px;
   border-radius: 10px;
   text-align: center;
-  z-index: 1001;
+  z-index: 1000;
   box-shadow: 0 0 10px rgba(0,0,0,0.2);
   margin-bottom: 30px;
 }
@@ -37,20 +34,11 @@ body {
   margin-top: 10px;
 }
 
-#divider {
-  position: absolute;
-  top: 130px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 1px;
-  background-color: #ccc;
-  z-index: 1001;
-}
+
 
 #timezone-info {
   position: absolute;
-  top: 150px;
+  top: 140px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
