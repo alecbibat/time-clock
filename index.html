@@ -11,15 +11,13 @@
 <body>
   <div id="map"></div>
 
-  <div id="timezone-info">
-    <h2>Time Zone Clock</h2>
-    <div id="zone-times"></div>
-
-  </div>
-
   <div id="denver-time">
     <h1>Denver GSOC Time</h1>
     <div id="denver-clock">Loading...</div>
+  </div>
+
+  <div id="timezone-info">
+    <div id="zone-times"></div>
   </div>
 
   <script>
@@ -57,14 +55,14 @@
           onEachFeature: function (feature, layer) {
             if (feature.properties && feature.properties.zone) {
               const popupDiv = document.createElement('div');
-              popupDiv.innerHTML = `<strong>${feature.properties.zone}</strong><br><span id="${feature.properties.zone.replace(/\W/g, '')}-time">Loading...</span>`;
+              popupDiv.innerHTML = `<strong>${feature.properties.zone}</strong><br><span id="${feature.properties.zone.replace(/\\W/g, '')}-time">Loading...</span>`;
               layer.bindPopup(popupDiv);
               layer.on('popupopen', () => {
                 try {
                   const time = new Date().toLocaleTimeString("en-US", { timeZone: feature.properties.zone });
-                  document.getElementById(`${feature.properties.zone.replace(/\W/g, '')}-time`).textContent = time;
+                  document.getElementById(`${feature.properties.zone.replace(/\\W/g, '')}-time`).textContent = time;
                 } catch (e) {
-                  document.getElementById(`${feature.properties.zone.replace(/\W/g, '')}-time`).textContent = 'unsupported';
+                  document.getElementById(`${feature.properties.zone.replace(/\\W/g, '')}-time`).textContent = 'unsupported';
                 }
               });
             }
