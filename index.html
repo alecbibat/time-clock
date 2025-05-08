@@ -7,6 +7,49 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    /* Sidebar styles */
+    #filter-menu {
+      position: absolute;
+      right: 0;
+      top: 0;
+      background-color: rgba(255, 255, 255, 0.9);
+      width: 250px;
+      height: 100%;
+      padding: 20px;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+      transform: translateX(100%);
+    }
+
+    #filter-menu.show {
+      transform: translateX(0);
+    }
+
+    #filter-toggle {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      cursor: pointer;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    #filter-menu h3 {
+      margin: 0;
+      font-size: 1.5em;
+    }
+
+    #firms-toggle {
+      margin-top: 20px;
+    }
+
+    #firms-toggle input {
+      margin-right: 10px;
+    }
+  </style>
 </head>
 <body>
   <div id="map"></div>
@@ -20,6 +63,17 @@
     <div id="zone-times"></div>
   </div>
 
+  <!-- Filter Menu (Right Sidebar) -->
+  <div id="filter-menu">
+    <h3>Fire Layer Controls</h3>
+    <div id="firms-toggle">
+      <input type="checkbox" id="firms-checkbox" />
+      <label for="firms-checkbox">Show FIRMS Fire Layer</label>
+    </div>
+  </div>
+
+  <div id="filter-toggle">☰</div>
+
   <script>
     const map = L.map('map').setView([40.3428, -105.6836], 4); // Center on RMNP
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -29,14 +83,18 @@
     // Add marker for Rocky Mountain National Park
     L.marker([40.3428, -105.6836]).addTo(map).bindPopup('Rocky Mountain National Park');
 
-    // Add FIRMS WMS layer for VIIRS 24-hour fires
-    L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
+    // FIRMS WMS Layer
+    const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
       layers: 'fires_viirs_24',
       format: 'image/png',
       transparent: true,
       attribution: 'NASA FIRMS',
-      MAP_KEY: '98816b6dadda86b7a77d0477889142db' // YOUR MAP KEY
-    }).addTo(map);
+      MAP_KEY: '98816b6dadda86b7a77d0477889142db' // Your MAP_KEY
+    });
+
+    // Add the layer to the map (initially hidden)
+    firmsLayer.addTo(map);
+    firmsLayer.setOpacity(0); // Hide by default
 
     // Timezone color fill
     const zoneColors = {
@@ -95,6 +153,22 @@
     }
     setInterval(updateDenverClock, 1000);
     updateDenverClock();
+
+    // FIRMS Layer Toggle functionality
+    document.getElementById('firms-checkbox').addEventListener('change', function(e) {
+      if (e.target.checked) {
+        firmsLayer.setOpacity(1); // Show the layer
+      } else {
+        firmsLayer.setOpacity(0); // Hide the layer
+      }
+    });
+
+    // Sidebar Toggle (minimize/expand)
+    const filterMenu = document.getElementById('filter-menu');
+    const filterToggle = document.getElementById('filter-toggle');
+    filterToggle.addEventListener('click', () => {
+      filterMenu.classList.toggle('show');
+    });
   </script>
 
   <script src="timezones.js"></script>
