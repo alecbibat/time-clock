@@ -14,7 +14,41 @@
     <h2>Time Zone Clock</h2>
     <ul id="zone-times"></ul>
   </div>
+  <script>
+    const map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const zoneColors = {
+      'UTC': '#ffadad',
+      'America/New_York': '#ffd6a5',
+      'Europe/London': '#fdffb6',
+      'Asia/Tokyo': '#caffbf',
+      'Australia/Sydney': '#9bf6ff'
+    };
+
+    fetch('timezones.geojson')
+      .then(response => response.json())
+      .then(data => {
+        L.geoJSON(data, {
+          style: function(feature) {
+            const zone = feature.properties.zone;
+            return {
+              color: '#555',
+              weight: 1,
+              fillColor: zoneColors[zone] || '#cccccc',
+              fillOpacity: 0.5
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            if (feature.properties && feature.properties.zone) {
+              layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+            }
+          }
+        }).addTo(map);
+      });
+  </script>
   <script src="timezones.js"></script>
-  <script src="script.js"></script>
 </body>
 </html>
