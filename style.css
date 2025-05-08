@@ -11,17 +11,24 @@ body {
 
 #timezone-info {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background: white;
-  padding: 10px;
-  max-width: 300px;
-  border-radius: 5px;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 90%;
   z-index: 1000;
 }
 
-#timezone-info ul {
-  padding-left: 20px;
+.timezone-box {
+  background: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  min-width: 150px;
 }
 
 #denver-time {
