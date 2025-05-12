@@ -1,52 +1,47 @@
-const map = L.map('map').setView([20, 0], 2);
+const map = L.map('map', { worldCopyJump: true }).setView([20, 0], 2);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-let timezoneLayer;
+let timezoneLayers = [];
 
 fetch('timezones_wVVG8.geojson')
   .then(response => response.json())
   .then(data => {
-    const wrappedFeatures = [];
+    const offsets = [-360, 0, 360];
 
-    const offsets = [-720, -360, 0, 360, 720];
-
-    data.features.forEach(feature => {
-      offsets.forEach(offset => {
+    offsets.forEach(offset => {
+      const shiftedFeatures = data.features.map(feature => {
         const shifted = JSON.parse(JSON.stringify(feature));
         shiftLongitude(shifted, offset);
-        wrappedFeatures.push(shifted);
+        return shifted;
       });
-    });
 
-    const wrappedGeoJSON = {
-      type: "FeatureCollection",
-      features: wrappedFeatures
-    };
-
-    timezoneLayer = L.geoJSON(wrappedGeoJSON, {
-      style: {
-        color: '#555',
-        weight: 1,
-        fillOpacity: 0.2
-      },
-      onEachFeature: function (feature, layer) {
-        if (feature.properties && feature.properties.zone) {
-          layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+      const layer = L.geoJSON({ type: 'FeatureCollection', features: shiftedFeatures }, {
+        style: {
+          color: '#555',
+          weight: 1,
+          fillOpacity: 0.2
+        },
+        onEachFeature: function (feature, layer) {
+          if (feature.properties && feature.properties.zone) {
+            layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+          }
         }
-      }
+      });
+
+      timezoneLayers.push(layer);
     });
 
     if (document.getElementById('timezone-checkbox').checked) {
-      timezoneLayer.addTo(map);
+      timezoneLayers.forEach(l => l.addTo(map));
     }
   });
 
 document.getElementById('timezone-checkbox').addEventListener('change', e => {
-  if (timezoneLayer) {
-    e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
-  }
+  timezoneLayers.forEach(layer => {
+    e.target.checked ? layer.addTo(map) : map.removeLayer(layer);
+  });
 });
 
 function shiftLongitude(feature, offset) {
