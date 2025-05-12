@@ -7,16 +7,9 @@ let timezoneLayer, firmsLayer, radarLayer, nowcoastLayer;
 const selectedZones = [];
 const timeContainer = document.getElementById('timezone-time-container');
 
-const zoneColors = [
-  '#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899',
-  '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'
-];
+const zoneColors = ['#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899', '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'];
 let colorIndex = 0;
-
-const majorZones = [
-  'America/New_York', 'Europe/London', 'Europe/Paris',
-  'Asia/Dubai', 'Asia/Kolkata', 'Asia/Tokyo', 'Australia/Sydney'
-];
+const majorZones = ['America/New_York', 'Europe/London', 'Europe/Paris', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Tokyo', 'Australia/Sydney'];
 
 let geoData = null;
 
@@ -95,23 +88,26 @@ function updateDenverClock() {
     document.getElementById("denver-clock").textContent = "unsupported";
   }
 }
+
 updateDenverClock();
 
-// Menu toggle
+// Toggle menu
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 });
 
-// Layer toggles
+// Timezones toggle
 document.getElementById('toggle-timezones').addEventListener('change', e => {
-  if (timezoneLayer) e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
+  if (timezoneLayer) {
+    e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
+  }
 });
 
+// FIRMS toggle
 document.getElementById('toggle-firms').addEventListener('change', e => {
   if (!firmsLayer) {
-    firmsLayer = L.tileLayer.wms(
-      'https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?MAP_KEY=98816b6dadda86b7a77d0477889142db', {
+    firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?MAP_KEY=98816b6dadda86b7a77d0477889142db', {
       layers: 'fires_viirs_24',
       format: 'image/png',
       transparent: true,
@@ -121,6 +117,7 @@ document.getElementById('toggle-firms').addEventListener('change', e => {
   e.target.checked ? firmsLayer.addTo(map) : map.removeLayer(firmsLayer);
 });
 
+// RainViewer toggle
 document.getElementById('toggle-radar').addEventListener('change', e => {
   if (!radarLayer) {
     fetch('https://api.rainviewer.com/public/weather-maps.json')
@@ -141,6 +138,7 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
+// nowCOAST radar toggle
 document.getElementById('toggle-nowcoast').addEventListener('change', e => {
   if (!nowcoastLayer) {
     nowcoastLayer = L.tileLayer.wms('https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer', {
@@ -153,3 +151,58 @@ document.getElementById('toggle-nowcoast').addEventListener('change', e => {
   }
   e.target.checked ? nowcoastLayer.addTo(map) : map.removeLayer(nowcoastLayer);
 });
+
+// Show/clear button
+const actionButton = document.createElement('button');
+actionButton.textContent = "Show 7 Major Time Zones";
+Object.assign(actionButton.style, {
+  padding: "10px 20px",
+  border: "none",
+  borderRadius: "5px",
+  background: "#0077ff",
+  color: "#fff",
+  fontWeight: "bold",
+  cursor: "pointer",
+  marginBottom: "10px"
+});
+timeContainer.before(actionButton);
+
+function toggleButtonToClear() {
+  actionButton.textContent = "Clear All";
+  actionButton.onclick = () => {
+    selectedZones.forEach(z => {
+      timezoneLayer.resetStyle(z.layer);
+      timeContainer.removeChild(z.box);
+    });
+    selectedZones.length = 0;
+    ghostBox.style.display = 'block';
+    toggleButtonToShow();
+  };
+  ghostBox.style.display = 'none';
+}
+
+function toggleButtonToShow() {
+  actionButton.textContent = "Show 7 Major Time Zones";
+  actionButton.onclick = () => {
+    if (!geoData) return;
+    const matches = geoData.features.filter(f => majorZones.includes(f.properties.ianaZone));
+    matches.forEach(f => {
+      const matchingLayer = timezoneLayer.getLayers().find(l => l.feature === f);
+      if (matchingLayer) {
+        handleZoneClick(matchingLayer, f.properties.ianaZone, f.properties.zone);
+      }
+    });
+  };
+  ghostBox.style.display = 'block';
+}
+
+// Invisible box to prevent layout shift
+const ghostBox = document.createElement('div');
+ghostBox.className = 'timezone-box';
+ghostBox.style.visibility = 'hidden';
+ghostBox.style.height = '60px';
+ghostBox.style.marginTop = '0';
+timeContainer.appendChild(ghostBox);
+
+// Initialize button
+toggleButtonToShow();
