@@ -16,8 +16,28 @@
       background: #f0f0f0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+    }
+
+    #denver-time {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px 30px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    #denver-time h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
+    #denver-clock {
+      font-size: 2em;
+      font-weight: bold;
+      margin-top: 8px;
     }
 
     #map-wrapper {
@@ -31,32 +51,8 @@
     }
 
     #map {
-      height: 80vh; /* 80% of the viewport height */
+      height: 80vh;
       width: 100%;
-    }
-
-    #denver-time {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      padding: 15px 30px;
-      border-radius: 10px;
-      text-align: center;
-      z-index: 1001;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    }
-
-    #denver-time h1 {
-      margin: 0;
-      font-size: 2em;
-    }
-
-    #denver-clock {
-      font-size: 2em;
-      font-weight: bold;
-      margin-top: 8px;
     }
 
     .timezone-box {
@@ -113,14 +109,14 @@
 </head>
 <body>
 
-  <!-- Full-width wrapper -->
+  <!-- Moved ABOVE the map wrapper -->
+  <div id="denver-time">
+    <h1>Denver GSOC Time</h1>
+    <div id="denver-clock">Loading...</div>
+  </div>
+
   <div id="map-wrapper">
     <div id="map"></div>
-
-    <div id="denver-time">
-      <h1>Denver GSOC Time</h1>
-      <div id="denver-clock">Loading...</div>
-    </div>
 
     <div id="menu-toggle">☰ Layers</div>
     <div id="overlay-menu">
@@ -130,7 +126,6 @@
     </div>
   </div>
 
-  <!-- Timezone popups -->
   <div id="timezone-time-container"></div>
 
   <script src="script.js"></script>
