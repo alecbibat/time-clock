@@ -1,21 +1,23 @@
-const map = L.map('map').setView([20, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+// Assuming this script handles loading and displaying the GeoJSON data
 
-fetch('timezones.geojson')
+// This part assumes you're now using a different GeoJSON (like 'timezones_wVVG8.geojson')
+// Update this line if you want to load a different file
+fetch('timezones_wVVG8.geojson')
   .then(response => response.json())
   .then(data => {
     L.geoJSON(data, {
-      style: {
-        color: '#555',
-        weight: 1,
-        fillOpacity: 0.2
+      style: function (feature) {
+        return {
+          color: "#333",
+          weight: 1,
+          fillOpacity: 0.3
+        };
       },
       onEachFeature: function (feature, layer) {
-        if (feature.properties && feature.properties.zone) {
-          layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+        if (feature.properties && feature.properties.name) {
+          layer.bindPopup("Timezone: " + feature.properties.name);
         }
       }
     }).addTo(map);
-  });
+  })
+  .catch(err => console.error('Failed to load GeoJSON:', err));
