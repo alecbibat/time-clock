@@ -1,6 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
   const map = L.map('map', { worldCopyJump: true }).setView([20, 0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?', {
+    layers: 'fires_modis',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'NASA FIRMS'
+  });
+
+  firmsLayer.setOpacity(0);
+  firmsLayer.addTo(map);
+
+  document.getElementById('toggle-firms')?.addEventListener('change', e => {
+    firmsLayer.setOpacity(e.target.checked ? 1 : 0);
+  });
+
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
@@ -74,7 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(updateDenverTime, 1000);
   updateDenverTime();
 
-  // Toggle overlays
   document.getElementById("toggle-timezones").addEventListener("change", function () {
     timezoneLayers.forEach(layer => {
       if (this.checked) {
