@@ -1,55 +1,48 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const map = L.map('map', { worldCopyJump: true }).setView([20, 0], 2);
+  const map = L.map('map').setView([20, 0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
   let timezoneLayers = [];
-  const activeZones = new Map();
-
+  const zoneBoxes = new Map();
+  const zoneColors = {};
+  timeZones.forEach(z => zoneColors[z.name] = z.color);
   const zoneTimesContainer = document.getElementById('zone-times');
 
   fetch('timezones_cleaned.geojson')
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to load GeoJSON");
-      return response.json();
-    })
+    .then(res => res.json())
     .then(data => {
       const offsets = [-360, 0, 360];
 
       offsets.forEach(offset => {
-        const shiftedFeatures = data.features.map(feature => {
-          const shifted = JSON.parse(JSON.stringify(feature));
-          shiftLongitude(shifted, offset);
-          return shifted;
+        const shiftedFeatures = data.features.map(f => {
+          const copy = JSON.parse(JSON.stringify(f));
+          shiftLongitude(copy, offset);
+          return copy;
         });
 
         const layer = L.geoJSON({ type: 'FeatureCollection', features: shiftedFeatures }, {
-          style: {
-            color: '#555',
-            weight: 1,
-            fillOpacity: 0.2
-          },
-          onEachFeature: function (feature, layer) {
+          style: { color: '#555', weight: 1, fillOpacity: 0.2 },
+          onEachFeature: (feature, layer) => {
             const zone = feature.properties?.zone;
             const offsetHrs = feature.properties?.offset;
             if (!zone || offsetHrs === undefined) return;
 
             layer.on('click', () => toggleZone(layer, zone, offsetHrs));
-            layer.bindPopup(`Time Zone: ${zone} (UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs})`);
+            layer.bindPopup(`Zone: ${zone} (UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs})`);
           }
         });
 
         timezoneLayers.push(layer);
       });
 
-      if (document.getElementById('timezone-checkbox')?.checked) {
+      if (document.getElementById('timezone-checkbox').checked) {
         timezoneLayers.forEach(l => l.addTo(map));
       }
-    })
-    .catch(err => console.error("Error loading GeoJSON:", err));
+    });
 
-  document.getElementById('timezone-checkbox')?.addEventListener('change', e => {
+  document.getElementById('timezone-checkbox').addEventListener('change', e => {
     timezoneLayers.forEach(layer => {
       e.target.checked ? layer.addTo(map) : map.removeLayer(layer);
     });
@@ -59,79 +52,54 @@ document.addEventListener("DOMContentLoaded", () => {
     layers: 'fires_viirs_24',
     format: 'image/png',
     transparent: true,
-    attribution: 'NASA FIRMS',
-    MAP_KEY: '98816b6dadda86b7a77d0477889142db'
+    attribution: 'NASA FIRMS'
   });
   firmsLayer.setOpacity(0);
   firmsLayer.addTo(map);
 
-  document.getElementById('firms-checkbox')?.addEventListener('change', e => {
+  document.getElementById('firms-checkbox').addEventListener('change', e => {
     firmsLayer.setOpacity(e.target.checked ? 1 : 0);
   });
 
   function shiftLongitude(feature, offset) {
     function shiftCoords(coords) {
-      return coords.map(coord => {
-        if (Array.isArray(coord[0])) {
-          return shiftCoords(coord);
-        } else {
-          return [coord[0] + offset, coord[1]];
-        }
-      });
+      return coords.map(coord => Array.isArray(coord[0]) ? shiftCoords(coord) : [coord[0] + offset, coord[1]]);
     }
-
-    if (feature.geometry && feature.geometry.coordinates) {
+    if (feature.geometry?.coordinates) {
       feature.geometry.coordinates = shiftCoords(feature.geometry.coordinates);
     }
   }
 
-  function updateClock(elementId, timeZone) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    function update() {
-      try {
-        const now = new Date().toLocaleString("en-US", { timeZone });
-        el.textContent = new Date(now).toLocaleTimeString();
-      } catch {
-        el.textContent = "unsupported";
-      }
+  function toggleZone(layer, zone, offsetHrs) {
+    const id = zone.replace(/[^\w]/g, '_');
+
+    if (zoneBoxes.has(id)) {
+      map.removeLayer(layer);
+      document.getElementById(id)?.remove();
+      zoneBoxes.delete(id);
+    } else {
+      layer.setStyle({ color: 'black', fillOpacity: 0.4, weight: 2 });
+
+      const box = document.createElement('div');
+      box.className = 'timezone-box';
+      box.id = id;
+      box.style.backgroundColor = zoneColors[zone] || '#eee';
+      box.innerHTML = `<strong>${zone}</strong><div>UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}</div>`;
+      zoneTimesContainer.appendChild(box);
+      zoneBoxes.set(id, box);
     }
-    update();
-    setInterval(update, 1000);
+  }
+
+  // Live update of Denver clock
+  function updateClock(elId, timeZone) {
+    const el = document.getElementById(elId);
+    function tick() {
+      const now = new Date().toLocaleString("en-US", { timeZone });
+      el.textContent = new Date(now).toLocaleTimeString();
+    }
+    tick();
+    setInterval(tick, 1000);
   }
 
   updateClock('denver-clock', 'America/Denver');
-
-  const colorLookup = {};
-  for (const z of timeZones) {
-    colorLookup[z.name] = z.color;
-  }
-
-  function toggleZone(layer, zone, offsetHrs) {
-    const safeId = cssSafe(zone);
-
-    if (activeZones.has(zone)) {
-      map.removeLayer(activeZones.get(zone).layer);
-      document.getElementById(`tzbox-${safeId}`)?.remove();
-      activeZones.delete(zone);
-      return;
-    }
-
-    layer.setStyle({ color: '#000', weight: 2, fillOpacity: 0.5 });
-
-    const color = colorLookup[zone] || '#eee';
-
-    const box = document.createElement('div');
-    box.className = 'timezone-box';
-    box.style.backgroundColor = color;
-    box.id = `tzbox-${safeId}`;
-    box.innerHTML = `<div><strong>${zone}</strong></div><div>UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}</div>`;
-    zoneTimesContainer.appendChild(box);
-
-    activeZones.set(zone, { layer });
-  }
-
-  function cssSafe(str) {
-    return str.replace(/[^a-zA-Z0-9]/g, '_');
-  }
 });
