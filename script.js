@@ -7,8 +7,8 @@ let timezoneLayer, firmsLayer, radarLayer;
 let selectedLayer = null;
 const timeContainer = document.getElementById('timezone-time-container');
 
-// Load GeoJSON with offset
-fetch('timezones_wVVG8.geojson')
+// Load GeoJSON with IANA time zones
+fetch('timezones_wVVG8_with_iana.geojson')
   .then(res => res.json())
   .then(data => {
     timezoneLayer = L.geoJSON(data, {
@@ -18,14 +18,14 @@ fetch('timezones_wVVG8.geojson')
         fillOpacity: 0.2
       },
       onEachFeature: function (feature, layer) {
-        const offset = feature.properties.offset;
-        const zone = feature.properties.zone;
+        const zoneName = feature.properties.ianaZone;
+        const label = feature.properties.zone;
 
-        if (zone) {
-          layer.bindPopup(`Time Zone: ${zone}`);
+        if (label) {
+          layer.bindPopup(`Time Zone: ${label}`);
         }
 
-        if (typeof offset === 'number') {
+        if (zoneName) {
           layer.on('click', function () {
             if (selectedLayer === layer) {
               timeContainer.innerHTML = '';
@@ -39,11 +39,17 @@ fetch('timezones_wVVG8.geojson')
               timezoneLayer.resetStyle(selectedLayer);
             }
 
+            const now = new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: zoneName
+            });
+
             const timeBox = document.createElement('div');
             timeBox.className = 'timezone-box';
             timeBox.style.border = '2px solid #0077ff';
             timeBox.style.backgroundColor = '#e0f3ff';
-            timeBox.innerText = `🕒 ${zone}: ${getTimeString(offset)} (UTC${offset >= 0 ? '+' : ''}${offset})`;
+            timeBox.innerText = `🕒 ${label}: ${now}`;
 
             timeContainer.appendChild(timeBox);
             selectedLayer = layer;
@@ -58,14 +64,7 @@ fetch('timezones_wVVG8.geojson')
     }).addTo(map);
   });
 
-function getTimeString(offset) {
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  const local = new Date(utc + 3600000 * offset);
-  return local.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// Denver clock
+// Denver clock (with DST)
 function updateDenverClock() {
   try {
     const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -77,7 +76,7 @@ function updateDenverClock() {
 setInterval(updateDenverClock, 1000);
 updateDenverClock();
 
-// Menu toggle logic
+// Layer toggle menu logic
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
