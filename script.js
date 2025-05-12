@@ -1,23 +1,34 @@
-// Assuming this script handles loading and displaying the GeoJSON data
+const map = L.map('map').setView([20, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-// This part assumes you're now using a different GeoJSON (like 'timezones_wVVG8.geojson')
-// Update this line if you want to load a different file
 fetch('timezones_wVVG8.geojson')
   .then(response => response.json())
   .then(data => {
     L.geoJSON(data, {
-      style: function (feature) {
-        return {
-          color: "#333",
-          weight: 1,
-          fillOpacity: 0.3
-        };
+      style: {
+        color: '#555',
+        weight: 1,
+        fillOpacity: 0.2
       },
       onEachFeature: function (feature, layer) {
-        if (feature.properties && feature.properties.name) {
-          layer.bindPopup("Timezone: " + feature.properties.name);
+        if (feature.properties && feature.properties.zone) {
+          layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
         }
       }
     }).addTo(map);
-  })
-  .catch(err => console.error('Failed to load GeoJSON:', err));
+  });
+
+function updateClock(elementId, timeZone) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  function update() {
+    const now = new Date().toLocaleString("en-US", { timeZone });
+    el.textContent = new Date(now).toLocaleTimeString();
+  }
+  update();
+  setInterval(update, 1000);
+}
+
+updateClock('denver-clock', 'America/Denver');
