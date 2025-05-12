@@ -5,6 +5,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 let timezoneLayer, firmsLayer, radarLayer;
 let selectedLayer = null;
+let activeBox = null;
+let activeZone = null;
+
 const timeContainer = document.getElementById('timezone-time-container');
 
 // Load GeoJSON with IANA time zones
@@ -28,43 +31,56 @@ fetch('timezones_wVVG8_with_iana.geojson')
         if (zoneName) {
           layer.on('click', function () {
             if (selectedLayer === layer) {
+              // Deselect
               timeContainer.innerHTML = '';
               timezoneLayer.resetStyle(layer);
               selectedLayer = null;
+              activeBox = null;
+              activeZone = null;
               return;
             }
 
+            // Reset
             timeContainer.innerHTML = '';
             if (selectedLayer) {
               timezoneLayer.resetStyle(selectedLayer);
             }
 
-            const now = new Date().toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: zoneName
-            });
-
+            // Create new box
             const timeBox = document.createElement('div');
             timeBox.className = 'timezone-box';
             timeBox.style.border = '2px solid #0077ff';
             timeBox.style.backgroundColor = '#e0f3ff';
-            timeBox.innerText = `🕒 ${label}: ${now}`;
 
+            const labelEl = document.createElement('div');
+            labelEl.innerText = `🕒 ${label}`;
+
+            const clockEl = document.createElement('div');
+            clockEl.id = 'active-timezone-clock';
+            clockEl.style.fontSize = '1.2em';
+            clockEl.style.marginTop = '4px';
+
+            timeBox.appendChild(labelEl);
+            timeBox.appendChild(clockEl);
             timeContainer.appendChild(timeBox);
+
             selectedLayer = layer;
+            activeBox = clockEl;
+            activeZone = zoneName;
+
             layer.setStyle({
               color: '#0077ff',
               weight: 2,
               fillOpacity: 0.5
             });
+
+            updateActiveClock(); // first time
           });
         }
       }
     }).addTo(map);
   });
 
-// Denver clock (with DST)
 function updateDenverClock() {
   try {
     const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -73,7 +89,24 @@ function updateDenverClock() {
     document.getElementById("denver-clock").textContent = "unsupported";
   }
 }
-setInterval(updateDenverClock, 1000);
+
+function updateActiveClock() {
+  if (activeBox && activeZone) {
+    try {
+      const time = new Date().toLocaleTimeString([], { timeZone: activeZone });
+      activeBox.textContent = time;
+    } catch {
+      activeBox.textContent = 'unsupported';
+    }
+  }
+}
+
+// Update clocks every second
+setInterval(() => {
+  updateDenverClock();
+  updateActiveClock();
+}, 1000);
+
 updateDenverClock();
 
 // Layer toggle menu logic
