@@ -4,19 +4,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 let timezoneLayer, firmsLayer, radarLayer;
+const selectedZones = [];
 const timeContainer = document.getElementById('timezone-time-container');
 
-const selectedZones = []; // array of { layer, zone, clockEl, color }
-
-// Predefined colors to cycle through
+// Colors to cycle through for highlighting
 const zoneColors = [
   '#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899',
   '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'
 ];
-
 let colorIndex = 0;
 
-// Load GeoJSON with IANA time zones
+// Load timezones with IANA zone data
 fetch('timezones_wVVG8_with_iana.geojson')
   .then(res => res.json())
   .then(data => {
@@ -36,12 +34,13 @@ fetch('timezones_wVVG8_with_iana.geojson')
 
         if (zoneName) {
           layer.on('click', function () {
-            // Check if already selected
+            // If already selected, remove
             const existing = selectedZones.find(z => z.layer === layer);
             if (existing) {
               timezoneLayer.resetStyle(layer);
               timeContainer.removeChild(existing.box);
               selectedZones.splice(selectedZones.indexOf(existing), 1);
+              if (selectedZones.length === 0) clearAllBtn.style.display = "none";
               return;
             }
 
@@ -51,7 +50,7 @@ fetch('timezones_wVVG8_with_iana.geojson')
             const timeBox = document.createElement('div');
             timeBox.className = 'timezone-box';
             timeBox.style.border = `2px solid ${color}`;
-            timeBox.style.backgroundColor = `${color}20`; // transparent fill
+            timeBox.style.backgroundColor = `${color}20`;
 
             const labelEl = document.createElement('div');
             labelEl.innerText = `🕒 ${label}`;
@@ -77,7 +76,8 @@ fetch('timezones_wVVG8_with_iana.geojson')
               box: timeBox
             });
 
-            updateClock(clockEl, zoneName); // immediate update
+            clearAllBtn.style.display = "inline-block";
+            updateClock(clockEl, zoneName);
           });
         }
       }
@@ -93,7 +93,6 @@ function updateClock(el, zone) {
   }
 }
 
-// Update all clocks every second
 setInterval(() => {
   for (const z of selectedZones) {
     updateClock(z.clockEl, z.zone);
@@ -101,7 +100,6 @@ setInterval(() => {
   updateDenverClock();
 }, 1000);
 
-// Denver clock
 function updateDenverClock() {
   try {
     const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -112,7 +110,7 @@ function updateDenverClock() {
 }
 updateDenverClock();
 
-// Layer toggle menu logic
+// Layer toggle menu
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
@@ -155,3 +153,35 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
     e.target.checked ? radarLayer.addTo(map) : map.removeLayer(radarLayer);
   }
 });
+
+// Add "Clear All" button and manage it
+const clearAllBtn = document.createElement('button');
+clearAllBtn.textContent = "Clear All";
+clearAllBtn.style.padding = "10px 20px";
+clearAllBtn.style.border = "none";
+clearAllBtn.style.borderRadius = "5px";
+clearAllBtn.style.background = "#ff5555";
+clearAllBtn.style.color = "#fff";
+clearAllBtn.style.fontWeight = "bold";
+clearAllBtn.style.cursor = "pointer";
+clearAllBtn.style.display = "none";
+clearAllBtn.style.marginBottom = "10px";
+
+clearAllBtn.addEventListener('click', () => {
+  selectedZones.forEach(z => {
+    timezoneLayer.resetStyle(z.layer);
+    timeContainer.removeChild(z.box);
+  });
+  selectedZones.length = 0;
+  clearAllBtn.style.display = "none";
+});
+
+timeContainer.before(clearAllBtn);
+
+// Persistent invisible box to prevent layout shift
+const ghostBox = document.createElement('div');
+ghostBox.className = 'timezone-box';
+ghostBox.style.visibility = 'hidden';
+ghostBox.style.height = '60px';
+ghostBox.style.marginTop = '0';
+timeContainer.appendChild(ghostBox);
