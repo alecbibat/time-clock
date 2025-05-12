@@ -24,15 +24,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const layer = L.geoJSON({ type: 'FeatureCollection', features: shiftedFeatures }, {
-          style: {
-            color: '#555',
-            weight: 1,
-            fillOpacity: 0.2
+          style: feature => {
+            const tzid = feature.properties.tzid;
+            const color = getColorForZone(tzid);
+            return {
+              color: color,
+              fillColor: color,
+              weight: 1,
+              fillOpacity: 0.2
+            };
           },
           onEachFeature: function (feature, layer) {
             const tzid = feature.properties.tzid;
             const color = getColorForZone(tzid);
-            layer.setStyle({ fillColor: color });
             layer.on('click', () => {
               selectedZones[tzid] = layer;
               createTimeBox(tzid, color);
@@ -99,7 +103,7 @@ function createTimeBox(tzid, color) {
   const container = document.getElementById("time-zone-times");
   const boxId = `time-box-${tzid.replace(/[\\/]/g, '-')}`;
 
-  if (selectedZones[tzid]) {
+  if (selectedZones[tzid] && document.getElementById(boxId)) {
     document.getElementById(boxId)?.remove();
     selectedZones[tzid].setStyle({ fillOpacity: 0.2 });
     delete selectedZones[tzid];
@@ -125,7 +129,6 @@ function createTimeBox(tzid, color) {
   }, 1000);
 }
 
-// Optional: use consistent color per tzid
 function getColorForZone(tzid) {
   let hash = 0;
   for (let i = 0; i < tzid.length; i++) {
