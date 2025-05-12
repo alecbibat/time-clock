@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }).addTo(map);
 
   let timezoneLayers = [];
+  const selectedZones = new Set();
 
   fetch('timezones_cleaned.geojson')
     .then(response => {
@@ -32,6 +33,35 @@ document.addEventListener("DOMContentLoaded", () => {
           onEachFeature: function (feature, layer) {
             if (feature.properties && feature.properties.zone) {
               layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+
+              layer.on('click', () => {
+                const zoneId = feature.properties.zone.replace(/[^a-zA-Z0-9]/g, '_');
+                const color = layer.options.fillColor || '#555';
+
+                if (selectedZones.has(zoneId)) {
+                  selectedZones.delete(zoneId);
+                  layer.setStyle({ fillOpacity: 0.2, weight: 1 });
+
+                  const badge = document.getElementById(`zone-badge-${zoneId}`);
+                  if (badge) badge.remove();
+                } else {
+                  selectedZones.add(zoneId);
+                  layer.setStyle({ fillOpacity: 0.6, weight: 3 });
+
+                  const badge = document.createElement('div');
+                  badge.textContent = feature.properties.zone;
+                  badge.id = `zone-badge-${zoneId}`;
+                  badge.style.background = color;
+                  badge.style.color = '#fff';
+                  badge.style.padding = '4px 8px';
+                  badge.style.margin = '4px';
+                  badge.style.borderRadius = '4px';
+                  badge.style.fontSize = '0.9em';
+                  badge.style.display = 'inline-block';
+
+                  document.getElementById('zone-badge-container')?.appendChild(badge);
+                }
+              });
             }
           }
         });
