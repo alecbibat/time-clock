@@ -10,15 +10,16 @@
     body { margin: 0; font-family: sans-serif; }
     #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 0; }
 
-    #denver-time {
-      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      padding: 20px 40px;
-      border-radius: 10px;
-      text-align: center;
-      z-index: 1001;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    }
+#denver-time {
+  position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px 40px;
+  border-radius: 10px;
+  text-align: center;
+  z-index: 1001;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  font-size: 2em; /* Make everything inside scale up */
+}
 
     .timezone-box {
       position: absolute;
