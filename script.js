@@ -3,11 +3,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-let timezoneLayer, firmsLayer, radarLayer, nowcoastLayer;
+let timezoneLayer, firmsLayer, radarLayer;
 const selectedZones = [];
-const timeContainer = document.getElementById('timezone-time-container') || document.body; // fallback for demo
+const timeContainer = document.getElementById('timezone-time-container');
 
-const zoneColors = ['#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899', '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'];
+const zoneColors = [
+  '#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899',
+  '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'
+];
 let colorIndex = 0;
 
 const majorZones = [
@@ -22,13 +25,16 @@ const majorZones = [
 
 let geoData = null;
 
-// Load GeoJSON
 fetch('timezones_wVVG8_with_iana.geojson')
   .then(res => res.json())
   .then(data => {
     geoData = data;
     timezoneLayer = L.geoJSON(data, {
-      style: { color: '#555', weight: 1, fillOpacity: 0.2 },
+      style: {
+        color: '#555',
+        weight: 1,
+        fillOpacity: 0.2
+      },
       onEachFeature: function (feature, layer) {
         const zoneName = feature.properties.ianaZone;
         const label = feature.properties.zone;
@@ -56,9 +62,6 @@ function handleZoneClick(layer, zoneName, label) {
   timeBox.className = 'timezone-box';
   timeBox.style.border = `2px solid ${color}`;
   timeBox.style.backgroundColor = `${color}20`;
-  timeBox.style.padding = '10px';
-  timeBox.style.margin = '5px';
-  timeBox.style.display = 'inline-block';
 
   const labelEl = document.createElement('div');
   labelEl.innerText = `🕒 ${label}`;
@@ -71,9 +74,18 @@ function handleZoneClick(layer, zoneName, label) {
   timeBox.appendChild(clockEl);
   timeContainer.appendChild(timeBox);
 
-  layer.setStyle({ color: color, weight: 2, fillOpacity: 0.5 });
+  layer.setStyle({
+    color: color,
+    weight: 2,
+    fillOpacity: 0.5
+  });
 
-  selectedZones.push({ layer: layer, zone: zoneName, clockEl: clockEl, box: timeBox });
+  selectedZones.push({
+    layer: layer,
+    zone: zoneName,
+    clockEl: clockEl,
+    box: timeBox
+  });
 
   updateClock(clockEl, zoneName);
   toggleButtonToClear();
@@ -89,18 +101,18 @@ function updateClock(el, zone) {
 }
 
 setInterval(() => {
-  for (const z of selectedZones) updateClock(z.clockEl, z.zone);
+  for (const z of selectedZones) {
+    updateClock(z.clockEl, z.zone);
+  }
   updateDenverClock();
 }, 1000);
 
 function updateDenverClock() {
   try {
     const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
-    const el = document.getElementById("denver-clock");
-    if (el) el.textContent = time;
+    document.getElementById("denver-clock").textContent = time;
   } catch {
-    const el = document.getElementById("denver-clock");
-    if (el) el.textContent = "unsupported";
+    document.getElementById("denver-clock").textContent = "unsupported";
   }
 }
 updateDenverClock();
@@ -112,12 +124,16 @@ document.getElementById('menu-toggle').addEventListener('click', () => {
 });
 
 document.getElementById('toggle-timezones').addEventListener('change', e => {
-  if (timezoneLayer) e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
+  if (timezoneLayer) {
+    e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
+  }
 });
 
 document.getElementById('toggle-firms').addEventListener('change', e => {
   if (!firmsLayer) {
-    firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?MAP_KEY=98816b6dadda86b7a77d0477889142db', {
+    // 🧩 Using your map key for FIRMS
+    firmsLayer = L.tileLayer.wms(
+      'https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?MAP_KEY=98816b6dadda86b7a77d0477889142db', {
       layers: 'fires_viirs_24',
       format: 'image/png',
       transparent: true,
@@ -147,16 +163,61 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// ✅ nowCOAST Radar Toggle
-document.getElementById('toggle-nowcoast').addEventListener('change', e => {
-  if (!nowcoastLayer) {
-    nowcoastLayer = L.tileLayer.wms('https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer', {
-      layers: '1',
-      format: 'image/png',
-      transparent: true,
-      attribution: 'NOAA nowCOAST',
-      opacity: 0.6
-    });
-  }
-  e.target.checked ? nowcoastLayer.addTo(map) : map.removeLayer(nowcoastLayer);
+// Action button
+const actionButton = document.createElement('button');
+actionButton.textContent = "Show 7 Major Time Zones";
+Object.assign(actionButton.style, {
+  padding: "10px 20px",
+  border: "none",
+  borderRadius: "5px",
+  background: "#0077ff",
+  color: "#fff",
+  fontWeight: "bold",
+  cursor: "pointer",
+  marginBottom: "10px"
 });
+timeContainer.before(actionButton);
+
+// Ghost box for layout stability
+const ghostBox = document.createElement('div');
+ghostBox.className = 'timezone-box';
+ghostBox.style.visibility = 'hidden';
+ghostBox.style.height = '60px';
+ghostBox.style.marginTop = '0';
+timeContainer.appendChild(ghostBox);
+
+// Button modes
+function toggleButtonToClear() {
+  actionButton.textContent = "Clear All";
+  actionButton.onclick = () => {
+    selectedZones.forEach(z => {
+      timezoneLayer.resetStyle(z.layer);
+      timeContainer.removeChild(z.box);
+    });
+    selectedZones.length = 0;
+    ghostBox.style.display = 'block';
+    toggleButtonToShow();
+  };
+  ghostBox.style.display = 'none';
+}
+
+function toggleButtonToShow() {
+  actionButton.textContent = "Show 7 Major Time Zones";
+  actionButton.onclick = () => {
+    if (!geoData) return;
+    const matches = geoData.features.filter(f =>
+      majorZones.includes(f.properties.ianaZone)
+    );
+    matches.forEach(f => {
+      const matchingLayer = timezoneLayer.getLayers().find(l =>
+        l.feature === f
+      );
+      if (matchingLayer) {
+        handleZoneClick(matchingLayer, f.properties.ianaZone, f.properties.zone);
+      }
+    });
+  };
+  ghostBox.style.display = 'block';
+}
+
+toggleButtonToShow();
