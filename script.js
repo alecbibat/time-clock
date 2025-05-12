@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     format: 'image/png',
     transparent: true,
     attribution: 'NASA FIRMS'
+    MAP_KEY: '98816b6dadda86b7a77d0477889142db' // YOUR MAP KEY
   });
   firmsLayer.setOpacity(0);
   firmsLayer.addTo(map);
