@@ -7,14 +7,14 @@ let timezoneLayer, firmsLayer, radarLayer;
 const selectedZones = [];
 const timeContainer = document.getElementById('timezone-time-container');
 
-// Colors to cycle through
+// Highlight color palette
 const zoneColors = [
   '#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899',
   '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'
 ];
 let colorIndex = 0;
 
-// Predefined major time zones
+// Predefined major timezones
 const majorZones = [
   'America/New_York',
   'Europe/London',
@@ -27,7 +27,7 @@ const majorZones = [
 
 let geoData = null;
 
-// Load GeoJSON
+// Load timezone data
 fetch('timezones_wVVG8_with_iana.geojson')
   .then(res => res.json())
   .then(data => {
@@ -42,11 +42,8 @@ fetch('timezones_wVVG8_with_iana.geojson')
         const zoneName = feature.properties.ianaZone;
         const label = feature.properties.zone;
 
-        if (label) {
-          layer.bindPopup(`Time Zone: ${label}`);
-        }
-
         if (zoneName) {
+          layer.bindPopup(`Time Zone: ${label}`);
           layer.on('click', () => handleZoneClick(layer, zoneName, label));
         }
       }
@@ -108,7 +105,7 @@ function updateClock(el, zone) {
   }
 }
 
-// Clock updates every second
+// Update all clocks every second
 setInterval(() => {
   for (const z of selectedZones) {
     updateClock(z.clockEl, z.zone);
@@ -126,7 +123,7 @@ function updateDenverClock() {
 }
 updateDenverClock();
 
-// Layer toggle menu
+// Layer toggle UI
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
@@ -170,7 +167,7 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// Dual-purpose button: Show 7 zones or Clear All
+// Create the dual-purpose button
 const actionButton = document.createElement('button');
 actionButton.textContent = "Show 7 Major Time Zones";
 Object.assign(actionButton.style, {
@@ -185,6 +182,15 @@ Object.assign(actionButton.style, {
 });
 timeContainer.before(actionButton);
 
+// Invisible ghost box for layout spacing
+const ghostBox = document.createElement('div');
+ghostBox.className = 'timezone-box';
+ghostBox.style.visibility = 'hidden';
+ghostBox.style.height = '60px';
+ghostBox.style.marginTop = '0';
+timeContainer.appendChild(ghostBox);
+
+// Mode switchers
 function toggleButtonToClear() {
   actionButton.textContent = "Clear All";
   actionButton.onclick = () => {
@@ -193,8 +199,10 @@ function toggleButtonToClear() {
       timeContainer.removeChild(z.box);
     });
     selectedZones.length = 0;
+    ghostBox.style.display = 'block';
     toggleButtonToShow();
   };
+  ghostBox.style.display = 'none';
 }
 
 function toggleButtonToShow() {
@@ -213,15 +221,8 @@ function toggleButtonToShow() {
       }
     });
   };
+  ghostBox.style.display = 'block';
 }
 
-// Prevent layout shift by adding a ghost box
-const ghostBox = document.createElement('div');
-ghostBox.className = 'timezone-box';
-ghostBox.style.visibility = 'hidden';
-ghostBox.style.height = '60px';
-ghostBox.style.marginTop = '0';
-timeContainer.appendChild(ghostBox);
-
-// Initialize default button
+// Initialize default mode
 toggleButtonToShow();
