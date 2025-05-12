@@ -5,7 +5,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 let timezoneLayers = [];
 
-fetch('timezones_wVVG8.geojson')
+fetch('timezones_cleaned.geojson')
   .then(response => response.json())
   .then(data => {
     const offsets = [-360, 0, 360];
