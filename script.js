@@ -6,7 +6,25 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 fetch('timezones.geojson')
   .then(response => response.json())
   .then(data => {
-    L.geoJSON(data, {
+    let selectedLayer = null;
+    const timeContainer = document.getElementById('timezone-time-container');
+
+    function getTimeString(offset) {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const local = new Date(utc + 3600000 * offset);
+      return local.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function clearExistingBox() {
+      timeContainer.innerHTML = '';
+      if (selectedLayer) {
+        geojson.resetStyle(selectedLayer);
+        selectedLayer = null;
+      }
+    }
+
+    const geojson = L.geoJSON(data, {
       style: {
         color: '#555',
         weight: 1,
@@ -16,6 +34,39 @@ fetch('timezones.geojson')
         if (feature.properties && feature.properties.zone) {
           layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
         }
+
+        layer.on('click', function () {
+          clearExistingBox();
+
+          const offset = feature.properties.offset || 0;
+          const zone = feature.properties.zone || 'Unknown';
+
+          const timeBox = document.createElement('div');
+          timeBox.className = 'timezone-box';
+          timeBox.style.border = '2px solid #0077ff';
+          timeBox.style.backgroundColor = '#e0f3ff';
+          timeBox.innerText = `🕒 ${zone}: ${getTimeString(offset)} (UTC${offset >= 0 ? '+' : ''}${offset})`;
+
+          timeContainer.appendChild(timeBox);
+          selectedLayer = layer;
+          layer.setStyle({
+            color: '#0077ff',
+            weight: 2,
+            fillOpacity: 0.5
+          });
+        });
       }
     }).addTo(map);
   });
+
+// Update Denver clock
+function updateDenverClock() {
+  try {
+    const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
+    document.getElementById("denver-clock").textContent = time;
+  } catch (e) {
+    document.getElementById("denver-clock").textContent = "unsupported";
+  }
+}
+setInterval(updateDenverClock, 1000);
+updateDenverClock();
