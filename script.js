@@ -3,7 +3,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-fetch('timezones.geojson')
+// Load the updated GeoJSON with offset from 'name'
+fetch('timezones_wVVG8.geojson')
   .then(response => response.json())
   .then(data => {
     let selectedLayer = null;
@@ -31,30 +32,32 @@ fetch('timezones.geojson')
         fillOpacity: 0.2
       },
       onEachFeature: function (feature, layer) {
-        if (feature.properties && feature.properties.zone) {
-          layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+        const offset = feature.properties.offset;
+        const zone = feature.properties.zone;
+
+        if (zone) {
+          layer.bindPopup(`Time Zone: ${zone}`);
         }
 
-        layer.on('click', function () {
-          clearExistingBox();
+        if (typeof offset === 'number') {
+          layer.on('click', function () {
+            clearExistingBox();
 
-          const offset = feature.properties.offset || 0;
-          const zone = feature.properties.zone || 'Unknown';
+            const timeBox = document.createElement('div');
+            timeBox.className = 'timezone-box';
+            timeBox.style.border = '2px solid #0077ff';
+            timeBox.style.backgroundColor = '#e0f3ff';
+            timeBox.innerText = `🕒 ${zone}: ${getTimeString(offset)} (UTC${offset >= 0 ? '+' : ''}${offset})`;
 
-          const timeBox = document.createElement('div');
-          timeBox.className = 'timezone-box';
-          timeBox.style.border = '2px solid #0077ff';
-          timeBox.style.backgroundColor = '#e0f3ff';
-          timeBox.innerText = `🕒 ${zone}: ${getTimeString(offset)} (UTC${offset >= 0 ? '+' : ''}${offset})`;
-
-          timeContainer.appendChild(timeBox);
-          selectedLayer = layer;
-          layer.setStyle({
-            color: '#0077ff',
-            weight: 2,
-            fillOpacity: 0.5
+            timeContainer.appendChild(timeBox);
+            selectedLayer = layer;
+            layer.setStyle({
+              color: '#0077ff',
+              weight: 2,
+              fillOpacity: 0.5
+            });
           });
-        });
+        }
       }
     }).addTo(map);
   });
