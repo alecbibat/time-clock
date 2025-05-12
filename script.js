@@ -5,6 +5,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }).addTo(map);
 
   let timezoneLayers = [];
+  const activeZones = new Map();
+
+  const zoneTimesContainer = document.createElement('div');
+  zoneTimesContainer.id = 'zone-times';
+  document.body.appendChild(zoneTimesContainer);
 
   fetch('timezones_cleaned.geojson')
     .then(response => {
@@ -12,8 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return response.json();
     })
     .then(data => {
-      console.log("Loaded GeoJSON features:", data.features.length);
-
       const offsets = [-360, 0, 360];
 
       offsets.forEach(offset => {
@@ -30,9 +33,11 @@ document.addEventListener("DOMContentLoaded", () => {
             fillOpacity: 0.2
           },
           onEachFeature: function (feature, layer) {
-            if (feature.properties && feature.properties.zone) {
-              layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
-            }
+            const zone = feature.properties?.zone;
+            if (!zone) return;
+
+            layer.on('click', () => toggleZone(layer, zone));
+            layer.bindPopup(`Time Zone: ${zone}`);
           }
         });
 
@@ -83,15 +88,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateClock(elementId, timeZone) {
     const el = document.getElementById(elementId);
-    if (!el) {
-      console.warn(`Clock element "${elementId}" not found`);
-      return;
-    }
+    if (!el) return;
     function update() {
       try {
         const now = new Date().toLocaleString("en-US", { timeZone });
         el.textContent = new Date(now).toLocaleTimeString();
-      } catch (e) {
+      } catch {
         el.textContent = "unsupported";
       }
     }
@@ -100,4 +102,45 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   updateClock('denver-clock', 'America/Denver');
+
+  // Time zone color lookup
+  const colorLookup = {};
+  for (const z of timeZones) {
+    colorLookup[z.name] = z.color;
+  }
+
+  function toggleZone(layer, zone) {
+    if (activeZones.has(zone)) {
+      map.removeLayer(activeZones.get(zone).layer);
+      clearInterval(activeZones.get(zone).interval);
+      document.getElementById(`tzbox-${cssSafe(zone)}`)?.remove();
+      activeZones.delete(zone);
+    } else {
+      layer.setStyle({ color: '#000', weight: 2, fillOpacity: 0.5 });
+
+      const color = colorLookup[zone] || '#ccc';
+
+      const box = document.createElement('div');
+      box.className = 'timezone-box';
+      box.style.backgroundColor = color;
+      box.id = `tzbox-${cssSafe(zone)}`;
+      box.innerHTML = `<div><strong>${zone}</strong></div><div id="clock-${cssSafe(zone)}">Loading...</div>`;
+      zoneTimesContainer.appendChild(box);
+
+      const interval = setInterval(() => {
+        try {
+          const now = new Date().toLocaleString("en-US", { timeZone: zone });
+          document.getElementById(`clock-${cssSafe(zone)}`).textContent = new Date(now).toLocaleTimeString();
+        } catch {
+          document.getElementById(`clock-${cssSafe(zone)}`).textContent = "unsupported";
+        }
+      }, 1000);
+
+      activeZones.set(zone, { layer, interval });
+    }
+  }
+
+  function cssSafe(str) {
+    return str.replace(/[^a-zA-Z0-9]/g, '_');
+  }
 });
