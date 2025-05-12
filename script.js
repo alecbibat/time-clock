@@ -48,13 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // FIRMS fire layer handling with API key
-  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?', {
+  // FIRMS fire layer handling
+  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
     layers: 'fires_viirs_24',
     format: 'image/png',
     transparent: true,
-    attribution: 'NASA FIRMS',
-    MAP_KEY: '98816b6dadda86b7a77d0477889142db'
+    attribution: 'NASA FIRMS'
   });
   firmsLayer.setOpacity(0);
   firmsLayer.addTo(map);
@@ -85,4 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const el = document.getElementById(elementId);
     if (!el) return;
     function update() {
-      const now = new Date
+      const now = new Date().toLocaleString("en-US", { timeZone });
+      el.textContent = new Date(now).toLocaleTimeString();
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  updateClock('denver-clock', 'America/Denver');
+});
