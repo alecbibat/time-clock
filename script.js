@@ -4,11 +4,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 let timezoneLayer, firmsLayer, radarLayer;
-let selectedLayer = null;
-let activeBox = null;
-let activeZone = null;
-
 const timeContainer = document.getElementById('timezone-time-container');
+
+const selectedZones = []; // array of { layer, zone, clockEl, color }
+
+// Predefined colors to cycle through
+const zoneColors = [
+  '#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899',
+  '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'
+];
+
+let colorIndex = 0;
 
 // Load GeoJSON with IANA time zones
 fetch('timezones_wVVG8_with_iana.geojson')
@@ -30,33 +36,27 @@ fetch('timezones_wVVG8_with_iana.geojson')
 
         if (zoneName) {
           layer.on('click', function () {
-            if (selectedLayer === layer) {
-              // Deselect
-              timeContainer.innerHTML = '';
+            // Check if already selected
+            const existing = selectedZones.find(z => z.layer === layer);
+            if (existing) {
               timezoneLayer.resetStyle(layer);
-              selectedLayer = null;
-              activeBox = null;
-              activeZone = null;
+              timeContainer.removeChild(existing.box);
+              selectedZones.splice(selectedZones.indexOf(existing), 1);
               return;
             }
 
-            // Reset
-            timeContainer.innerHTML = '';
-            if (selectedLayer) {
-              timezoneLayer.resetStyle(selectedLayer);
-            }
+            const color = zoneColors[colorIndex % zoneColors.length];
+            colorIndex++;
 
-            // Create new box
             const timeBox = document.createElement('div');
             timeBox.className = 'timezone-box';
-            timeBox.style.border = '2px solid #0077ff';
-            timeBox.style.backgroundColor = '#e0f3ff';
+            timeBox.style.border = `2px solid ${color}`;
+            timeBox.style.backgroundColor = `${color}20`; // transparent fill
 
             const labelEl = document.createElement('div');
             labelEl.innerText = `🕒 ${label}`;
 
             const clockEl = document.createElement('div');
-            clockEl.id = 'active-timezone-clock';
             clockEl.style.fontSize = '1.2em';
             clockEl.style.marginTop = '4px';
 
@@ -64,23 +64,44 @@ fetch('timezones_wVVG8_with_iana.geojson')
             timeBox.appendChild(clockEl);
             timeContainer.appendChild(timeBox);
 
-            selectedLayer = layer;
-            activeBox = clockEl;
-            activeZone = zoneName;
-
             layer.setStyle({
-              color: '#0077ff',
+              color: color,
               weight: 2,
               fillOpacity: 0.5
             });
 
-            updateActiveClock(); // first time
+            selectedZones.push({
+              layer: layer,
+              zone: zoneName,
+              clockEl: clockEl,
+              box: timeBox
+            });
+
+            updateClock(clockEl, zoneName); // immediate update
           });
         }
       }
     }).addTo(map);
   });
 
+function updateClock(el, zone) {
+  try {
+    const time = new Date().toLocaleTimeString([], { timeZone: zone });
+    el.textContent = time;
+  } catch {
+    el.textContent = 'unsupported';
+  }
+}
+
+// Update all clocks every second
+setInterval(() => {
+  for (const z of selectedZones) {
+    updateClock(z.clockEl, z.zone);
+  }
+  updateDenverClock();
+}, 1000);
+
+// Denver clock
 function updateDenverClock() {
   try {
     const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -89,24 +110,6 @@ function updateDenverClock() {
     document.getElementById("denver-clock").textContent = "unsupported";
   }
 }
-
-function updateActiveClock() {
-  if (activeBox && activeZone) {
-    try {
-      const time = new Date().toLocaleTimeString([], { timeZone: activeZone });
-      activeBox.textContent = time;
-    } catch {
-      activeBox.textContent = 'unsupported';
-    }
-  }
-}
-
-// Update clocks every second
-setInterval(() => {
-  updateDenverClock();
-  updateActiveClock();
-}, 1000);
-
 updateDenverClock();
 
 // Layer toggle menu logic
