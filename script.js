@@ -7,14 +7,12 @@ let timezoneLayer, firmsLayer, radarLayer;
 const selectedZones = [];
 const timeContainer = document.getElementById('timezone-time-container');
 
-// Highlight color palette
 const zoneColors = [
   '#0077ff', '#00aa55', '#cc4400', '#aa00aa', '#008899',
   '#cc0077', '#ffaa00', '#0066cc', '#00ccaa', '#9933ff'
 ];
 let colorIndex = 0;
 
-// Predefined major timezones
 const majorZones = [
   'America/New_York',
   'Europe/London',
@@ -27,7 +25,7 @@ const majorZones = [
 
 let geoData = null;
 
-// Load timezone data
+// Load GeoJSON
 fetch('timezones_wVVG8_with_iana.geojson')
   .then(res => res.json())
   .then(data => {
@@ -43,7 +41,6 @@ fetch('timezones_wVVG8_with_iana.geojson')
         const label = feature.properties.zone;
 
         if (zoneName) {
-          layer.bindPopup(`Time Zone: ${label}`);
           layer.on('click', () => handleZoneClick(layer, zoneName, label));
         }
       }
@@ -105,7 +102,6 @@ function updateClock(el, zone) {
   }
 }
 
-// Update all clocks every second
 setInterval(() => {
   for (const z of selectedZones) {
     updateClock(z.clockEl, z.zone);
@@ -123,7 +119,7 @@ function updateDenverClock() {
 }
 updateDenverClock();
 
-// Layer toggle UI
+// Layer toggle logic
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
@@ -167,7 +163,7 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// Create the dual-purpose button
+// Action button logic
 const actionButton = document.createElement('button');
 actionButton.textContent = "Show 7 Major Time Zones";
 Object.assign(actionButton.style, {
@@ -182,7 +178,7 @@ Object.assign(actionButton.style, {
 });
 timeContainer.before(actionButton);
 
-// Invisible ghost box for layout spacing
+// Invisible ghost box
 const ghostBox = document.createElement('div');
 ghostBox.className = 'timezone-box';
 ghostBox.style.visibility = 'hidden';
@@ -190,7 +186,7 @@ ghostBox.style.height = '60px';
 ghostBox.style.marginTop = '0';
 timeContainer.appendChild(ghostBox);
 
-// Mode switchers
+// Button behavior
 function toggleButtonToClear() {
   actionButton.textContent = "Clear All";
   actionButton.onclick = () => {
@@ -224,5 +220,4 @@ function toggleButtonToShow() {
   ghostBox.style.display = 'block';
 }
 
-// Initialize default mode
 toggleButtonToShow();
