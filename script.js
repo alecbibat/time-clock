@@ -7,9 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let timezoneLayers = [];
   const activeZones = new Map();
 
-  const zoneTimesContainer = document.createElement('div');
-  zoneTimesContainer.id = 'zone-times';
-  document.body.appendChild(zoneTimesContainer);
+  const zoneTimesContainer = document.getElementById('zone-times');
 
   fetch('timezones_cleaned.geojson')
     .then(response => {
@@ -34,10 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           onEachFeature: function (feature, layer) {
             const zone = feature.properties?.zone;
-            if (!zone) return;
+            const offsetHrs = feature.properties?.offset;
+            if (!zone || offsetHrs === undefined) return;
 
-            layer.on('click', () => toggleZone(layer, zone));
-            layer.bindPopup(`Time Zone: ${zone}`);
+            layer.on('click', () => toggleZone(layer, zone, offsetHrs));
+            layer.bindPopup(`Time Zone: ${zone} (UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs})`);
           }
         });
 
@@ -103,41 +102,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateClock('denver-clock', 'America/Denver');
 
-  // Time zone color lookup
   const colorLookup = {};
   for (const z of timeZones) {
     colorLookup[z.name] = z.color;
   }
 
-  function toggleZone(layer, zone) {
+  function toggleZone(layer, zone, offsetHrs) {
+    const safeId = cssSafe(zone);
+
     if (activeZones.has(zone)) {
       map.removeLayer(activeZones.get(zone).layer);
-      clearInterval(activeZones.get(zone).interval);
-      document.getElementById(`tzbox-${cssSafe(zone)}`)?.remove();
+      document.getElementById(`tzbox-${safeId}`)?.remove();
       activeZones.delete(zone);
-    } else {
-      layer.setStyle({ color: '#000', weight: 2, fillOpacity: 0.5 });
-
-      const color = colorLookup[zone] || '#ccc';
-
-      const box = document.createElement('div');
-      box.className = 'timezone-box';
-      box.style.backgroundColor = color;
-      box.id = `tzbox-${cssSafe(zone)}`;
-      box.innerHTML = `<div><strong>${zone}</strong></div><div id="clock-${cssSafe(zone)}">Loading...</div>`;
-      zoneTimesContainer.appendChild(box);
-
-      const interval = setInterval(() => {
-        try {
-          const now = new Date().toLocaleString("en-US", { timeZone: zone });
-          document.getElementById(`clock-${cssSafe(zone)}`).textContent = new Date(now).toLocaleTimeString();
-        } catch {
-          document.getElementById(`clock-${cssSafe(zone)}`).textContent = "unsupported";
-        }
-      }, 1000);
-
-      activeZones.set(zone, { layer, interval });
+      return;
     }
+
+    layer.setStyle({ color: '#000', weight: 2, fillOpacity: 0.5 });
+
+    const color = colorLookup[zone] || '#eee';
+
+    const box = document.createElement('div');
+    box.className = 'timezone-box';
+    box.style.backgroundColor = color;
+    box.id = `tzbox-${safeId}`;
+    box.innerHTML = `<div><strong>${zone}</strong></div><div>UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}</div>`;
+    zoneTimesContainer.appendChild(box);
+
+    activeZones.set(zone, { layer });
   }
 
   function cssSafe(str) {
