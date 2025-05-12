@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
+  // Timezone layer handling
   let timezoneLayers = [];
 
   fetch('timezones_cleaned.geojson')
@@ -47,6 +48,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // FIRMS fire layer handling
+  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
+    layers: 'fires_viirs_24',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'NASA FIRMS'
+  });
+  firmsLayer.setOpacity(0);
+  firmsLayer.addTo(map);
+
+  document.getElementById('firms-checkbox').addEventListener('change', e => {
+    firmsLayer.setOpacity(e.target.checked ? 1 : 0);
+  });
+
+  // Helper to shift longitude
   function shiftLongitude(feature, offset) {
     function shiftCoords(coords) {
       return coords.map(coord => {
@@ -63,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Clock updater
   function updateClock(elementId, timeZone) {
     const el = document.getElementById(elementId);
     if (!el) return;
