@@ -25,41 +25,45 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const layer = L.geoJSON({ type: 'FeatureCollection', features: shiftedFeatures }, {
-          style: {
-            color: '#555',
-            weight: 1,
-            fillOpacity: 0.2
+          style: function (feature) {
+            const baseColor = feature.properties?.color || "#5c5cff";
+            return {
+              color: "#333",
+              weight: 1,
+              fillOpacity: 0.2,
+              fillColor: baseColor
+            };
           },
           onEachFeature: function (feature, layer) {
             if (feature.properties && feature.properties.zone) {
-              layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
+              const zoneName = feature.properties.zone;
+              const color = feature.properties.color || "#5c5cff";
 
-              layer.on('click', () => {
-                const zoneId = feature.properties.zone.replace(/[^a-zA-Z0-9]/g, '_');
-                const color = layer.options.fillColor || '#555';
+              layer.bindPopup(`Time Zone: ${zoneName}`);
 
-                if (selectedZones.has(zoneId)) {
-                  selectedZones.delete(zoneId);
+              layer.on("click", () => {
+                const safeId = zoneName.replace(/[^a-zA-Z0-9]/g, "_");
+
+                if (selectedZones.has(safeId)) {
+                  selectedZones.delete(safeId);
                   layer.setStyle({ fillOpacity: 0.2, weight: 1 });
-
-                  const badge = document.getElementById(`zone-badge-${zoneId}`);
-                  if (badge) badge.remove();
+                  document.getElementById(`zone-badge-${safeId}`)?.remove();
                 } else {
-                  selectedZones.add(zoneId);
+                  selectedZones.add(safeId);
                   layer.setStyle({ fillOpacity: 0.6, weight: 3 });
 
-                  const badge = document.createElement('div');
-                  badge.textContent = feature.properties.zone;
-                  badge.id = `zone-badge-${zoneId}`;
+                  const badge = document.createElement("div");
+                  badge.id = `zone-badge-${safeId}`;
+                  badge.textContent = zoneName;
                   badge.style.background = color;
-                  badge.style.color = '#fff';
-                  badge.style.padding = '4px 8px';
-                  badge.style.margin = '4px';
-                  badge.style.borderRadius = '4px';
-                  badge.style.fontSize = '0.9em';
-                  badge.style.display = 'inline-block';
+                  badge.style.color = "#fff";
+                  badge.style.padding = "4px 8px";
+                  badge.style.margin = "4px";
+                  badge.style.borderRadius = "4px";
+                  badge.style.fontSize = "0.9em";
+                  badge.style.display = "inline-block";
 
-                  document.getElementById('zone-badge-container')?.appendChild(badge);
+                  document.getElementById("zone-badge-container")?.appendChild(badge);
                 }
               });
             }
