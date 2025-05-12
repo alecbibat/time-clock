@@ -2,13 +2,14 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Time Zone Map + FIRMS + Radar + Filters</title>
+  <title>Time Zone Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
     body { margin: 0; font-family: sans-serif; }
     #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 0; }
+
     #denver-time {
       position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.9);
@@ -18,42 +19,29 @@
       z-index: 1001;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-    #denver-time h1 { margin: 0; font-size: 2em; }
-    #denver-clock { font-size: 3em; font-weight: bold; margin-top: 10px; }
-    #timezone-info {
-      position: absolute; top: 150px; left: 50%; transform: translateX(-50%);
-      z-index: 1000; width: 100%;
-    }
-    #zone-times {
-      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-      max-width: 90%; margin: auto; padding-top: 20px;
-    }
+
     .timezone-box {
-      background: white; padding: 10px 15px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 10px 20px;
       border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
-      text-align: center; min-width: 150px; font-size: 1em;
-      flex: 1 1 auto;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
     }
-    #filter-toggle {
-      position: absolute; top: 10px; right: 10px; z-index: 10001;
-      cursor: pointer; background: white; border: 1px solid #ccc;
-      padding: 8px 12px; font-size: 1.2em; border-radius: 5px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+
+    #timezone-time-container {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1001;
     }
-    #filter-menu {
-      position: absolute; top: 0; right: 0; height: 100%; width: 250px;
-      background-color: rgba(255, 255, 255, 0.95);
-      padding: 20px;
-      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
-      z-index: 10000;
-    }
-    #filter-menu.show { transform: translateX(0); }
-    #filter-menu h3 { margin-top: 0; font-size: 1.3em; }
-    #filter-menu div { margin-top: 15px; }
-    #filter-menu input { margin-right: 10px; }
   </style>
 </head>
 <body>
@@ -62,118 +50,8 @@
     <h1>Denver GSOC Time</h1>
     <div id="denver-clock">Loading...</div>
   </div>
-  <div id="timezone-info">
-    <div id="zone-times"></div>
-  </div>
-  <div id="filter-toggle">☰</div>
-  <div id="filter-menu">
-    <h3>Layer Controls</h3>
-    <div><input type="checkbox" id="firms-checkbox"> <label for="firms-checkbox">Show FIRMS Fire Layer</label></div>
-    <div><input type="checkbox" id="timezone-checkbox" checked> <label for="timezone-checkbox">Show Time Zone Overlays</label></div>
-    <div><input type="checkbox" id="radar-checkbox"> <label for="radar-checkbox">Show Weather Radar</label></div>
-  </div>
-  <script>
-    let timezoneLayer;
-    let radarLayer;
+  <div id="timezone-time-container"></div>
 
-    const map = L.map('map').setView([40.3428, -105.6836], 4);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // FIRMS Fire Layer
-    const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
-      layers: 'fires_viirs_24',
-      format: 'image/png',
-      transparent: true,
-      attribution: 'NASA FIRMS',
-      MAP_KEY: '98816b6dadda86b7a77d0477889142db'
-    });
-    firmsLayer.setOpacity(0);
-    firmsLayer.addTo(map);
-
-    // Load radar tile (RainViewer)
-    fetch('https://api.rainviewer.com/public/weather-maps.json')
-      .then(response => response.json())
-      .then(data => {
-        const lastFrame = data.radar?.nowcast?.slice(-1)[0];
-        if (lastFrame) {
-          radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${lastFrame}/256/{z}/{x}/{y}/2/1_1.png`, {
-            opacity: 0.6,
-            zIndex: 999,
-            attribution: '&copy; RainViewer'
-          });
-        }
-      });
-
-    // Sidebar toggle
-    document.getElementById('filter-toggle').addEventListener('click', () => {
-      document.getElementById('filter-menu').classList.toggle('show');
-    });
-
-    // FIRMS toggle
-    document.getElementById('firms-checkbox').addEventListener('change', e => {
-      firmsLayer.setOpacity(e.target.checked ? 1 : 0);
-    });
-
-    // Radar toggle
-    document.getElementById('radar-checkbox').addEventListener('change', e => {
-      if (radarLayer) {
-        e.target.checked ? radarLayer.addTo(map) : map.removeLayer(radarLayer);
-      }
-    });
-
-    // Timezone toggle
-    document.getElementById('timezone-checkbox').addEventListener('change', e => {
-      if (timezoneLayer) {
-        e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
-      }
-    });
-
-    function updateDenverClock() {
-      try {
-        const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
-        document.getElementById("denver-clock").textContent = time;
-      } catch (e) {
-        document.getElementById("denver-clock").textContent = "unsupported";
-      }
-    }
-    setInterval(updateDenverClock, 1000);
-    updateDenverClock();
-
-    const zoneColors = {
-      'UTC': '#ffadad', 'America/New_York': '#ffd6a5', 'America/Chicago': '#fdffb6',
-      'America/Denver': '#caffbf', 'America/Los_Angeles': '#9bf6ff',
-      'America/Anchorage': '#bdb2ff', 'Pacific/Honolulu': '#ffc6ff',
-      'Europe/London': '#fffffc', 'Asia/Tokyo': '#d0f4de', 'Australia/Sydney': '#a0c4ff'
-    };
-
-    fetch('timezones_wVVG8.geojson')
-      .then(res => res.json())
-      .then(data => {
-        timezoneLayer = L.geoJSON(data, {
-          style: f => ({
-            color: '#555', weight: 1,
-            fillColor: zoneColors[f.properties.zone] || '#ccc', fillOpacity: 0.5
-          }),
-          onEachFeature: (feature, layer) => {
-            if (feature.properties?.zone) {
-              const id = feature.properties.zone.replace(/\W/g, '');
-              layer.bindPopup(`<strong>${feature.properties.zone}</strong><br><span id="${id}-time">Loading...</span>`);
-              layer.on('popupopen', () => {
-                try {
-                  const time = new Date().toLocaleTimeString("en-US", { timeZone: feature.properties.zone });
-                  document.getElementById(`${id}-time`).textContent = time;
-                } catch {
-                  document.getElementById(`${id}-time`).textContent = 'unsupported';
-                }
-              });
-            }
-          }
-        });
-        timezoneLayer.addTo(map);
-      });
-  </script>
-  <script src="timezones.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
