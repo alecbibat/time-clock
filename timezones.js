@@ -12,27 +12,4 @@ const timeZones = [
   { name: "Australia/Sydney", label: "Australian Eastern Time", color: "#a0c4ff" }
 ];
 
-function updateClocks() {
-  const container = document.getElementById("zone-times");
-  container.innerHTML = "";
-  timeZones.forEach(zone => {
-    try {
-      const time = new Date().toLocaleTimeString("en-US", { timeZone: zone.name });
-      const div = document.createElement("div");
-      div.className = "timezone-box";
-      div.setAttribute("data-zone", zone.name);
-      div.style.backgroundColor = zone.color || "white";
-      div.innerHTML = `<strong>${zone.label}</strong><br>${time}`;
-      container.appendChild(div);
-    } catch (e) {
-      const div = document.createElement("div");
-      div.className = "timezone-box";
-      div.setAttribute("data-zone", zone.name);
-      div.style.backgroundColor = zone.color || "white";
-      div.innerHTML = `<strong>${zone.label}</strong><br>unsupported`;
-      container.appendChild(div);
-    }
-  });
-}
-setInterval(updateClocks, 1000);
-updateClocks();
+// (Zone box generation code removed)
