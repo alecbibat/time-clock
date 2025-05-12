@@ -30,74 +30,106 @@ document.addEventListener("DOMContentLoaded", () => {
             fillOpacity: 0.2
           },
           onEachFeature: function (feature, layer) {
-            if (feature.properties && feature.properties.zone) {
-              layer.bindPopup(`Time Zone: ${feature.properties.zone}`);
-            }
+            const tzid = feature.properties.tzid;
+            const color = getColorForZone(tzid);
+            layer.setStyle({ fillColor: color });
+            layer.on('click', () => {
+              selectedZones[tzid] = layer;
+              createTimeBox(tzid, color);
+            });
           }
-        });
+        }).addTo(map);
 
         timezoneLayers.push(layer);
       });
-
-      if (document.getElementById('timezone-checkbox')?.checked) {
-        timezoneLayers.forEach(l => l.addTo(map));
-      }
-    })
-    .catch(err => console.error("Error loading GeoJSON:", err));
-
-  document.getElementById('timezone-checkbox')?.addEventListener('change', e => {
-    timezoneLayers.forEach(layer => {
-      e.target.checked ? layer.addTo(map) : map.removeLayer(layer);
     });
-  });
-
-  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?', {
-    layers: 'fires_viirs_24',
-    format: 'image/png',
-    transparent: true,
-    attribution: 'NASA FIRMS',
-    MAP_KEY: '98816b6dadda86b7a77d0477889142db'
-  });
-  firmsLayer.setOpacity(0);
-  firmsLayer.addTo(map);
-
-  document.getElementById('firms-checkbox')?.addEventListener('change', e => {
-    firmsLayer.setOpacity(e.target.checked ? 1 : 0);
-  });
 
   function shiftLongitude(feature, offset) {
-    function shiftCoords(coords) {
-      return coords.map(coord => {
-        if (Array.isArray(coord[0])) {
-          return shiftCoords(coord);
-        } else {
-          return [coord[0] + offset, coord[1]];
-        }
-      });
-    }
-
-    if (feature.geometry && feature.geometry.coordinates) {
-      feature.geometry.coordinates = shiftCoords(feature.geometry.coordinates);
+    if (feature.geometry.type === "Polygon") {
+      feature.geometry.coordinates = feature.geometry.coordinates.map(ring =>
+        ring.map(coord => [coord[0] + offset, coord[1]])
+      );
+    } else if (feature.geometry.type === "MultiPolygon") {
+      feature.geometry.coordinates = feature.geometry.coordinates.map(polygon =>
+        polygon.map(ring => ring.map(coord => [coord[0] + offset, coord[1]]))
+      );
     }
   }
 
-  function updateClock(elementId, timeZone) {
-    const el = document.getElementById(elementId);
-    if (!el) {
-      console.warn(`Clock element "${elementId}" not found`);
-      return;
-    }
-    function update() {
-      try {
-        const now = new Date().toLocaleString("en-US", { timeZone });
-        el.textContent = new Date(now).toLocaleTimeString();
-      } catch (e) {
-        el.textContent = "unsupported";
+  function updateDenverTime() {
+    const denverTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Denver',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date());
+    document.getElementById('denver-clock').textContent = denverTime;
+  }
+
+  setInterval(updateDenverTime, 1000);
+  updateDenverTime();
+
+  // Toggle overlays
+  document.getElementById("toggle-timezones").addEventListener("change", function () {
+    timezoneLayers.forEach(layer => {
+      if (this.checked) {
+        map.addLayer(layer);
+      } else {
+        map.removeLayer(layer);
       }
-    }
-    update();
-    setInterval(update, 1000);
+    });
+  });
+});
+
+// -------- Overlay Click Behavior and Time Box Logic --------
+let selectedZones = {};
+
+function getTimeInZone(tzid) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: tzid,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date());
+}
+
+function createTimeBox(tzid, color) {
+  const container = document.getElementById("time-zone-times");
+  const boxId = `time-box-${tzid.replace(/[\\/]/g, '-')}`;
+
+  if (selectedZones[tzid]) {
+    document.getElementById(boxId)?.remove();
+    selectedZones[tzid].setStyle({ fillOpacity: 0.2 });
+    delete selectedZones[tzid];
+    return;
   }
 
-  updateClock('denver-clock', 'America/Denver');
-});
+  const box = document.createElement("div");
+  box.className = "time-box";
+  box.id = boxId;
+  box.style.backgroundColor = color;
+  box.style.padding = "10px";
+  box.style.marginBottom = "5px";
+  box.style.borderRadius = "6px";
+  box.style.color = "white";
+  box.style.whiteSpace = "pre-line";
+  box.innerText = `${tzid}\n${getTimeInZone(tzid)}`;
+  container.appendChild(box);
+
+  selectedZones[tzid].setStyle({ fillOpacity: 0.6 });
+
+  box.interval = setInterval(() => {
+    box.innerText = `${tzid}\n${getTimeInZone(tzid)}`;
+  }, 1000);
+}
+
+// Optional: use consistent color per tzid
+function getColorForZone(tzid) {
+  let hash = 0;
+  for (let i = 0; i < tzid.length; i++) {
+    hash = tzid.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return `hsl(${hash % 360}, 60%, 50%)`;
+}
