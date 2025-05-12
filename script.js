@@ -27,10 +27,20 @@ document.addEventListener("DOMContentLoaded", () => {
           onEachFeature: (feature, layer) => {
             const zone = feature.properties?.zone;
             const offsetHrs = feature.properties?.offset;
-            if (!zone || offsetHrs === undefined) return;
 
-            layer.on('click', () => toggleZone(layer, zone, offsetHrs));
-            layer.bindPopup(`Zone: ${zone} (UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs})`);
+            console.log("Clicked zone feature:", feature.properties);
+
+            if (!zone || offsetHrs === undefined) {
+              console.warn("Missing zone or offset for feature:", feature);
+              return;
+            }
+
+            layer.on('click', () => {
+              console.log(`Zone clicked: ${zone}, Offset: UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}`);
+              toggleZone(layer, zone, offsetHrs);
+            });
+
+            layer.bindPopup(`Time Zone: ${zone} (UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs})`);
           }
         });
 
@@ -73,24 +83,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function toggleZone(layer, zone, offsetHrs) {
     const id = zone.replace(/[^\w]/g, '_');
 
-    if (zoneBoxes.has(id)) {
-      map.removeLayer(layer);
-      document.getElementById(id)?.remove();
-      zoneBoxes.delete(id);
-    } else {
-      layer.setStyle({ color: 'black', fillOpacity: 0.4, weight: 2 });
-
-      const box = document.createElement('div');
-      box.className = 'timezone-box';
-      box.id = id;
-      box.style.backgroundColor = zoneColors[zone] || '#eee';
-      box.innerHTML = `<strong>${zone}</strong><div>UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}</div>`;
-      zoneTimesContainer.appendChild(box);
-      zoneBoxes.set(id, box);
+    const existingBox = document.getElementById(id);
+    if (existingBox) {
+      existingBox.remove();
+      return;
     }
+
+    const box = document.createElement('div');
+    box.className = 'timezone-box';
+    box.id = id;
+    box.style.backgroundColor = zoneColors[zone] || '#eee';
+    box.innerHTML = `<strong>${zone}</strong><div>UTC${offsetHrs >= 0 ? '+' : ''}${offsetHrs}</div>`;
+    document.getElementById('zone-times').appendChild(box);
   }
 
-  // Live update of Denver clock
   function updateClock(elId, timeZone) {
     const el = document.getElementById(elId);
     function tick() {
