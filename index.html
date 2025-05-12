@@ -19,38 +19,49 @@
       font-size: 0.95em;
       line-height: 1.4;
     }
+    .city-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .time {
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div id="denver-time">
+    <h1>Denver GSOC Time</h1>
+    <div id="denver-clock">Loading...</div>
+  </div>
+  <div id="timezone-info">
+    <div id="zone-times"></div>
+  </div>
+  <div id="filter-toggle">☰</div>
+  <div id="filter-menu">
+    <h3>Layer Controls</h3>
+    <div><input type="checkbox" id="firms-checkbox"> <label for="firms-checkbox">Show FIRMS Fire Layer</label></div>
+    <div><input type="checkbox" id="timezone-checkbox" checked> <label for="timezone-checkbox">Show Time Zone Overlays</label></div>
+    <div><input type="checkbox" id="radar-checkbox"> <label for="radar-checkbox">Show Weather Radar</label></div>
+  </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([39, -98], 4); // Focus on US
+    const map = L.map('map').setView([39, -98], 4);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 6,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Timezone color mapping
-    const timezoneColors = {
-      "America/Los_Angeles": "#A0C4FF",  // Pacific
-      "America/Denver": "#BDB2FF",       // Mountain
-      "America/Chicago": "#FFC6FF",      // Central
-      "America/New_York": "#FFFFFC"      // Eastern
-    };
-
-    // Load timezone polygons
+    // Load accurate timezone polygons from GeoJSON
     fetch('timezones_wVVG8.geojson')
       .then(response => response.json())
       .then(data => {
         L.geoJSON(data, {
           style: function (feature) {
-            const name = feature.properties.name || feature.properties.tzid;
-            const color = timezoneColors[name] || "#999999";
             return {
-              color: color,
+              color: '#3388ff',
               weight: 1,
               fillOpacity: 0.2
             };
@@ -61,6 +72,9 @@
           }
         }).addTo(map);
       });
+
+    // Existing script may populate other UI components like clocks, boxes, etc.
+    // (assuming you have those scripts elsewhere in your project)
   </script>
 </body>
 </html>
