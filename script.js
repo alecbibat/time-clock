@@ -25,7 +25,6 @@ const majorZones = [
 
 let geoData = null;
 
-// Load GeoJSON
 fetch('timezones_wVVG8_with_iana.geojson')
   .then(res => res.json())
   .then(data => {
@@ -39,7 +38,6 @@ fetch('timezones_wVVG8_with_iana.geojson')
       onEachFeature: function (feature, layer) {
         const zoneName = feature.properties.ianaZone;
         const label = feature.properties.zone;
-
         if (zoneName) {
           layer.on('click', () => handleZoneClick(layer, zoneName, label));
         }
@@ -119,7 +117,7 @@ function updateDenverClock() {
 }
 updateDenverClock();
 
-// Layer toggle logic
+// UI Toggles
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
@@ -133,7 +131,9 @@ document.getElementById('toggle-timezones').addEventListener('change', e => {
 
 document.getElementById('toggle-firms').addEventListener('change', e => {
   if (!firmsLayer) {
-    firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
+    // 🧩 Using your map key for FIRMS
+    firmsLayer = L.tileLayer.wms(
+      'https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?MAP_KEY=98816b6dadda86b7a77d0477889142db', {
       layers: 'fires_viirs_24',
       format: 'image/png',
       transparent: true,
@@ -163,7 +163,7 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// Action button logic
+// Action button
 const actionButton = document.createElement('button');
 actionButton.textContent = "Show 7 Major Time Zones";
 Object.assign(actionButton.style, {
@@ -178,7 +178,7 @@ Object.assign(actionButton.style, {
 });
 timeContainer.before(actionButton);
 
-// Invisible ghost box
+// Ghost box for layout stability
 const ghostBox = document.createElement('div');
 ghostBox.className = 'timezone-box';
 ghostBox.style.visibility = 'hidden';
@@ -186,7 +186,7 @@ ghostBox.style.height = '60px';
 ghostBox.style.marginTop = '0';
 timeContainer.appendChild(ghostBox);
 
-// Button behavior
+// Button modes
 function toggleButtonToClear() {
   actionButton.textContent = "Clear All";
   actionButton.onclick = () => {
