@@ -4,11 +4,13 @@ document.addEventListener("DOMContentLoaded", () => {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Timezone layer handling
   let timezoneLayers = [];
 
   fetch('timezones_cleaned.geojson')
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to load GeoJSON");
+      return response.json();
+    })
     .then(data => {
       console.log("Loaded GeoJSON features:", data.features.length);
 
@@ -37,33 +39,32 @@ document.addEventListener("DOMContentLoaded", () => {
         timezoneLayers.push(layer);
       });
 
-      if (document.getElementById('timezone-checkbox').checked) {
+      if (document.getElementById('timezone-checkbox')?.checked) {
         timezoneLayers.forEach(l => l.addTo(map));
       }
-    });
+    })
+    .catch(err => console.error("Error loading GeoJSON:", err));
 
-  document.getElementById('timezone-checkbox').addEventListener('change', e => {
+  document.getElementById('timezone-checkbox')?.addEventListener('change', e => {
     timezoneLayers.forEach(layer => {
       e.target.checked ? layer.addTo(map) : map.removeLayer(layer);
     });
   });
 
-  // FIRMS fire layer handling
-  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires', {
+  const firmsLayer = L.tileLayer.wms('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?', {
     layers: 'fires_viirs_24',
     format: 'image/png',
     transparent: true,
-    attribution: 'NASA FIRMS'
-    MAP_KEY: '98816b6dadda86b7a77d0477889142db' // YOUR MAP KEY
+    attribution: 'NASA FIRMS',
+    MAP_KEY: '98816b6dadda86b7a77d0477889142db'
   });
   firmsLayer.setOpacity(0);
   firmsLayer.addTo(map);
 
-  document.getElementById('firms-checkbox').addEventListener('change', e => {
+  document.getElementById('firms-checkbox')?.addEventListener('change', e => {
     firmsLayer.setOpacity(e.target.checked ? 1 : 0);
   });
 
-  // Helper to shift longitude
   function shiftLongitude(feature, offset) {
     function shiftCoords(coords) {
       return coords.map(coord => {
@@ -80,13 +81,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Clock updater
   function updateClock(elementId, timeZone) {
     const el = document.getElementById(elementId);
-    if (!el) return;
+    if (!el) {
+      console.warn(`Clock element "${elementId}" not found`);
+      return;
+    }
     function update() {
-      const now = new Date().toLocaleString("en-US", { timeZone });
-      el.textContent = new Date(now).toLocaleTimeString();
+      try {
+        const now = new Date().toLocaleString("en-US", { timeZone });
+        el.textContent = new Date(now).toLocaleTimeString();
+      } catch (e) {
+        el.textContent = "unsupported";
+      }
     }
     update();
     setInterval(update, 1000);
