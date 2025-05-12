@@ -142,6 +142,7 @@ document.getElementById('toggle-firms').addEventListener('change', e => {
       format: 'image/png',
       transparent: true,
       attribution: 'NASA FIRMS'
+      MAP_KEY: '98816b6dadda86b7a77d0477889142db'
     });
   }
   e.target.checked ? firmsLayer.addTo(map) : map.removeLayer(firmsLayer);
