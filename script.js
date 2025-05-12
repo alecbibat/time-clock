@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }).addTo(map);
 
   let timezoneLayers = [];
-  const selectedZones = new Set();
+  const selectedZones = new Map(); // zoneId -> intervalId
 
   fetch('timezones_cleaned.geojson')
     .then(response => {
@@ -37,33 +37,51 @@ document.addEventListener("DOMContentLoaded", () => {
           onEachFeature: function (feature, layer) {
             if (feature.properties && feature.properties.zone) {
               const zoneName = feature.properties.zone;
+              const safeId = zoneName.replace(/[^a-zA-Z0-9]/g, "_");
               const color = feature.properties.color || "#5c5cff";
 
-              layer.bindPopup(`Time Zone: ${zoneName}`);
-
               layer.on("click", () => {
-                const safeId = zoneName.replace(/[^a-zA-Z0-9]/g, "_");
+                const badgeContainer = document.getElementById("zone-badge-container");
 
                 if (selectedZones.has(safeId)) {
+                  clearInterval(selectedZones.get(safeId));
                   selectedZones.delete(safeId);
                   layer.setStyle({ fillOpacity: 0.2, weight: 1 });
                   document.getElementById(`zone-badge-${safeId}`)?.remove();
                 } else {
-                  selectedZones.add(safeId);
                   layer.setStyle({ fillOpacity: 0.6, weight: 3 });
 
                   const badge = document.createElement("div");
                   badge.id = `zone-badge-${safeId}`;
-                  badge.textContent = zoneName;
                   badge.style.background = color;
                   badge.style.color = "#fff";
-                  badge.style.padding = "4px 8px";
+                  badge.style.padding = "6px 10px";
                   badge.style.margin = "4px";
                   badge.style.borderRadius = "4px";
                   badge.style.fontSize = "0.9em";
                   badge.style.display = "inline-block";
 
-                  document.getElementById("zone-badge-container")?.appendChild(badge);
+                  const label = document.createElement("strong");
+                  label.textContent = zoneName;
+                  const time = document.createElement("div");
+                  time.id = `zone-time-${safeId}`;
+                  time.textContent = "...";
+
+                  badge.appendChild(label);
+                  badge.appendChild(document.createElement("br"));
+                  badge.appendChild(time);
+                  badgeContainer?.appendChild(badge);
+
+                  const intervalId = setInterval(() => {
+                    try {
+                      const now = new Date().toLocaleString("en-US", { timeZone: zoneName });
+                      time.textContent = new Date(now).toLocaleTimeString();
+                    } catch (e) {
+                      time.textContent = "unsupported";
+                    }
+                  }, 1000);
+
+                  selectedZones.set(safeId, intervalId);
                 }
               });
             }
