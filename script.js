@@ -234,3 +234,6 @@ function displayAlerts(alerts) {
 
 fetchWeatherAlerts();
 setInterval(fetchWeatherAlerts, 60000);
+
+document.getElementById("last-updated").innerText =
+  "Last updated: " + new Date().toLocaleTimeString();
