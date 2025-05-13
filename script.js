@@ -4,6 +4,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 let timezoneLayer, firmsLayer, radarLayer;
+let alertLayers = L.layerGroup().addTo(map);
 const selectedZones = [];
 const timeContainer = document.getElementById('timezone-time-container');
 
@@ -160,7 +161,7 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// 🆕 NWS Weather Alert Feed
+// Weather Alert Fetch + Mapping
 async function fetchWeatherAlerts() {
   try {
     const response = await fetch("https://api.weather.gov/alerts/active");
@@ -174,7 +175,9 @@ async function fetchWeatherAlerts() {
         areaDesc: props.areaDesc,
         severity: props.severity,
         urgency: props.urgency,
-        event: props.event
+        event: props.event,
+        expires: props.expires,
+        geometry: feature.geometry
       };
     });
 
@@ -188,13 +191,22 @@ async function fetchWeatherAlerts() {
 function displayAlerts(alerts) {
   const container = document.getElementById("alert-feed");
   container.innerHTML = '';
+  alertLayers.clearLayers();
 
-  if (alerts.length === 0) {
-    container.innerHTML = '<p>No active alerts at this time.</p>';
+  const now = new Date();
+  const cutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+  const validAlerts = alerts.filter(alert => {
+    const expires = new Date(alert.expires || alert.ends || alert.onset || 0);
+    return expires <= cutoff;
+  });
+
+  if (validAlerts.length === 0) {
+    container.innerHTML = '<p>No active alerts in the next 24 hours.</p>';
     return;
   }
 
-  alerts.forEach(alert => {
+  validAlerts.forEach(alert => {
     const alertDiv = document.createElement("div");
     alertDiv.classList.add("weather-alert");
     alertDiv.innerHTML = `
@@ -206,9 +218,19 @@ function displayAlerts(alerts) {
       <p><em>Area: ${alert.areaDesc}</em></p>
     `;
     container.appendChild(alertDiv);
+
+    if (alert.geometry) {
+      const layer = L.geoJSON(alert.geometry, {
+        style: {
+          color: '#ff0000',
+          weight: 2,
+          fillOpacity: 0.2
+        }
+      }).bindPopup(`${alert.event}<br>${alert.headline}`);
+      alertLayers.addLayer(layer);
+    }
   });
 }
 
-// Initial fetch and update every 60 seconds
 fetchWeatherAlerts();
 setInterval(fetchWeatherAlerts, 60000);
