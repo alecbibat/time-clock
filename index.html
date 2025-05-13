@@ -22,8 +22,19 @@
       height: 100%;
     }
 
-    #main-container {
+    #main-container.has-alerts {
       display: flex;
+    }
+
+    #main-container.no-alerts #alert-sidebar {
+      display: none;
+    }
+
+    #main-container.no-alerts #map-wrapper {
+      width: 100% !important;
+    }
+
+    #main-container {
       width: 100%;
       height: 80vh;
     }
@@ -146,7 +157,7 @@
 
   <div id="timezone-time-container"></div>
 
-  <div id="main-container">
+  <div id="main-container" class="has-alerts">
     <div id="alert-sidebar">
       <div id="alert-feed">Loading weather alerts...</div>
       <p id="last-updated" style="font-size: 0.8em; color: #444; text-align: center; margin-top: 5px;">Last updated: just now</p>
