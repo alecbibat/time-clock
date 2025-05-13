@@ -51,7 +51,6 @@ function handleZoneClick(layer, zoneName, label) {
     timezoneLayer.resetStyle(layer);
     timeContainer.removeChild(existing.box);
     selectedZones.splice(selectedZones.indexOf(existing), 1);
-    if (selectedZones.length === 0) toggleButtonToShow();
     return;
   }
 
@@ -88,7 +87,6 @@ function handleZoneClick(layer, zoneName, label) {
   });
 
   updateClock(clockEl, zoneName);
-  toggleButtonToClear();
 }
 
 function updateClock(el, zone) {
@@ -131,14 +129,13 @@ document.getElementById('toggle-timezones').addEventListener('change', e => {
 
 document.getElementById('toggle-firms').addEventListener('change', e => {
   if (!firmsLayer) {
-    // 🧩 Using your map key for FIRMS
     firmsLayer = L.tileLayer.wms(
       'https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires?MAP_KEY=98816b6dadda86b7a77d0477889142db', {
-      layers: 'fires_viirs_24',
-      format: 'image/png',
-      transparent: true,
-      attribution: 'NASA FIRMS'
-    });
+        layers: 'fires_viirs_24',
+        format: 'image/png',
+        transparent: true,
+        attribution: 'NASA FIRMS'
+      });
   }
   e.target.checked ? firmsLayer.addTo(map) : map.removeLayer(firmsLayer);
 });
@@ -163,61 +160,55 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// Action button
-const actionButton = document.createElement('button');
-actionButton.textContent = "Show 7 Major Time Zones";
-Object.assign(actionButton.style, {
-  padding: "10px 20px",
-  border: "none",
-  borderRadius: "5px",
-  background: "#0077ff",
-  color: "#fff",
-  fontWeight: "bold",
-  cursor: "pointer",
-  marginBottom: "10px"
-});
-timeContainer.before(actionButton);
+// 🆕 NWS Weather Alert Feed
+async function fetchWeatherAlerts() {
+  try {
+    const response = await fetch("https://api.weather.gov/alerts/active");
+    const data = await response.json();
 
-// Ghost box for layout stability
-const ghostBox = document.createElement('div');
-ghostBox.className = 'timezone-box';
-ghostBox.style.visibility = 'hidden';
-ghostBox.style.height = '60px';
-ghostBox.style.marginTop = '0';
-timeContainer.appendChild(ghostBox);
-
-// Button modes
-function toggleButtonToClear() {
-  actionButton.textContent = "Clear All";
-  actionButton.onclick = () => {
-    selectedZones.forEach(z => {
-      timezoneLayer.resetStyle(z.layer);
-      timeContainer.removeChild(z.box);
+    const alerts = data.features.map(feature => {
+      const props = feature.properties;
+      return {
+        headline: props.headline,
+        description: props.description,
+        areaDesc: props.areaDesc,
+        severity: props.severity,
+        urgency: props.urgency,
+        event: props.event
+      };
     });
-    selectedZones.length = 0;
-    ghostBox.style.display = 'block';
-    toggleButtonToShow();
-  };
-  ghostBox.style.display = 'none';
+
+    displayAlerts(alerts);
+  } catch (error) {
+    console.error("Error fetching weather alerts:", error);
+    document.getElementById("alert-feed").innerText = "⚠️ Unable to load alerts.";
+  }
 }
 
-function toggleButtonToShow() {
-  actionButton.textContent = "Show 7 Major Time Zones";
-  actionButton.onclick = () => {
-    if (!geoData) return;
-    const matches = geoData.features.filter(f =>
-      majorZones.includes(f.properties.ianaZone)
-    );
-    matches.forEach(f => {
-      const matchingLayer = timezoneLayer.getLayers().find(l =>
-        l.feature === f
-      );
-      if (matchingLayer) {
-        handleZoneClick(matchingLayer, f.properties.ianaZone, f.properties.zone);
-      }
-    });
-  };
-  ghostBox.style.display = 'block';
+function displayAlerts(alerts) {
+  const container = document.getElementById("alert-feed");
+  container.innerHTML = '';
+
+  if (alerts.length === 0) {
+    container.innerHTML = '<p>No active alerts at this time.</p>';
+    return;
+  }
+
+  alerts.forEach(alert => {
+    const alertDiv = document.createElement("div");
+    alertDiv.classList.add("weather-alert");
+    alertDiv.innerHTML = `
+      <h3>${alert.event}</h3>
+      <p><strong>Urgency:</strong> ${alert.urgency}</p>
+      <p><strong>Severity:</strong> ${alert.severity}</p>
+      <p>${alert.headline}</p>
+      <p>${alert.description}</p>
+      <p><em>Area: ${alert.areaDesc}</em></p>
+    `;
+    container.appendChild(alertDiv);
+  });
 }
 
-toggleButtonToShow();
+// Initial fetch and update every 60 seconds
+fetchWeatherAlerts();
+setInterval(fetchWeatherAlerts, 60000);
