@@ -51,7 +51,7 @@
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      min-height: 80px; /* spacer to prevent frame shift */
+      min-height: 80px;
     }
 
     .timezone-box {
@@ -111,6 +111,27 @@
       display: block;
       margin-bottom: 5px;
     }
+
+    #alert-feed {
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 10px;
+      margin: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      width: 95%;
+      box-sizing: border-box;
+    }
+
+    .weather-alert {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+    }
+
+    .weather-alert h3 {
+      margin: 0;
+      color: #d9534f;
+    }
   </style>
 </head>
 <body>
@@ -121,10 +142,15 @@
     <div id="denver-clock">Loading...</div>
   </div>
 
-  <!-- Timezone boxes (spaced even when empty) -->
+  <!-- Timezone boxes -->
   <div id="timezone-time-container"></div>
 
-  <!-- Map frame -->
+  <!-- Weather Alerts -->
+  <div id="alert-feed">
+    Loading weather alerts...
+  </div>
+
+  <!-- Map Wrapper -->
   <div id="map-wrapper">
     <div id="map"></div>
 
