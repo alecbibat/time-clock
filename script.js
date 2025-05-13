@@ -14,16 +14,6 @@ const zoneColors = [
 ];
 let colorIndex = 0;
 
-const majorZones = [
-  'America/New_York',
-  'Europe/London',
-  'Europe/Paris',
-  'Asia/Dubai',
-  'Asia/Kolkata',
-  'Asia/Tokyo',
-  'Australia/Sydney'
-];
-
 let geoData = null;
 
 fetch('timezones_wVVG8_with_iana.geojson')
@@ -99,13 +89,6 @@ function updateClock(el, zone) {
   }
 }
 
-setInterval(() => {
-  for (const z of selectedZones) {
-    updateClock(z.clockEl, z.zone);
-  }
-  updateDenverClock();
-}, 1000);
-
 function updateDenverClock() {
   try {
     const time = new Date().toLocaleTimeString("en-US", { timeZone: "America/Denver" });
@@ -116,12 +99,20 @@ function updateDenverClock() {
 }
 updateDenverClock();
 
-// UI Toggles
+setInterval(() => {
+  for (const z of selectedZones) {
+    updateClock(z.clockEl, z.zone);
+  }
+  updateDenverClock();
+}, 1000);
+
+// Toggle menu
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 });
 
+// Layer toggles
 document.getElementById('toggle-timezones').addEventListener('change', e => {
   if (timezoneLayer) {
     e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
@@ -161,7 +152,19 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// Weather Alert Fetch + Mapping
+// Toggle alerts & feed
+document.getElementById('toggle-alerts').addEventListener('change', e => {
+  const sidebar = document.getElementById('alert-sidebar');
+  if (e.target.checked) {
+    alertLayers.addTo(map);
+    sidebar.style.display = "block";
+  } else {
+    map.removeLayer(alertLayers);
+    sidebar.style.display = "none";
+  }
+});
+
+// Weather Alert Fetch
 async function fetchWeatherAlerts() {
   try {
     const response = await fetch("https://api.weather.gov/alerts/active");
@@ -230,19 +233,11 @@ function displayAlerts(alerts) {
       alertLayers.addLayer(layer);
     }
   });
+
+  document.getElementById("last-updated").innerText =
+    "Last updated: " + new Date().toLocaleTimeString();
 }
 
+// Initial and auto refresh
 fetchWeatherAlerts();
 setInterval(fetchWeatherAlerts, 60000);
-
-document.getElementById("last-updated").innerText =
-  "Last updated: " + new Date().toLocaleTimeString();
-
-document.getElementById('toggle-alerts').addEventListener('change', e => {
-  if (e.target.checked) {
-    alertLayers.addTo(map);
-  } else {
-    map.removeLayer(alertLayers);
-  }
-});
-
