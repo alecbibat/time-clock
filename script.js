@@ -106,13 +106,12 @@ setInterval(() => {
   updateDenverClock();
 }, 1000);
 
-// Toggle menu
+// UI Toggles
 document.getElementById('menu-toggle').addEventListener('click', () => {
   const menu = document.getElementById('overlay-menu');
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 });
 
-// Layer toggles
 document.getElementById('toggle-timezones').addEventListener('change', e => {
   if (timezoneLayer) {
     e.target.checked ? timezoneLayer.addTo(map) : map.removeLayer(timezoneLayer);
@@ -152,19 +151,25 @@ document.getElementById('toggle-radar').addEventListener('change', e => {
   }
 });
 
-// Toggle alerts & feed
+// ALERT TOGGLE — hides both map layers + sidebar and resizes layout
 document.getElementById('toggle-alerts').addEventListener('change', e => {
   const sidebar = document.getElementById('alert-sidebar');
+  const container = document.getElementById('main-container');
+
   if (e.target.checked) {
     alertLayers.addTo(map);
     sidebar.style.display = "block";
+    container.classList.add("has-alerts");
+    container.classList.remove("no-alerts");
   } else {
     map.removeLayer(alertLayers);
     sidebar.style.display = "none";
+    container.classList.remove("has-alerts");
+    container.classList.add("no-alerts");
   }
 });
 
-// Weather Alert Fetch
+// WEATHER ALERT FETCH
 async function fetchWeatherAlerts() {
   try {
     const response = await fetch("https://api.weather.gov/alerts/active");
@@ -238,6 +243,6 @@ function displayAlerts(alerts) {
     "Last updated: " + new Date().toLocaleTimeString();
 }
 
-// Initial and auto refresh
+// INITIALIZE
 fetchWeatherAlerts();
 setInterval(fetchWeatherAlerts, 60000);
