@@ -237,3 +237,12 @@ setInterval(fetchWeatherAlerts, 60000);
 
 document.getElementById("last-updated").innerText =
   "Last updated: " + new Date().toLocaleTimeString();
+
+document.getElementById('toggle-alerts').addEventListener('change', e => {
+  if (e.target.checked) {
+    alertLayers.addTo(map);
+  } else {
+    map.removeLayer(alertLayers);
+  }
+});
+
