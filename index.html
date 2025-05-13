@@ -112,15 +112,23 @@
       margin-bottom: 5px;
     }
 
-    #alert-feed {
-      background-color: #fff3cd;
-      border: 1px solid #ffeeba;
+    #alert-sidebar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 300px;
+      background: #fff3cd;
+      border-right: 1px solid #ffeeba;
       padding: 10px;
-      margin: 10px;
-      max-height: 300px;
       overflow-y: auto;
-      width: 95%;
-      box-sizing: border-box;
+      z-index: 1003;
+      font-size: 0.9em;
+    }
+
+    #alert-feed {
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
     .weather-alert {
@@ -132,9 +140,20 @@
       margin: 0;
       color: #d9534f;
     }
+
+    body {
+      padding-left: 300px; /* make space for alert sidebar */
+    }
   </style>
 </head>
 <body>
+
+  <!-- Vertical Alert Sidebar -->
+  <div id="alert-sidebar">
+    <div id="alert-feed">Loading weather alerts...</div>
+    <p id="last-updated" style="font-size: 0.8em; color: #444; text-align: center; margin-top: 5px;">Last updated: just now</p>
+    <button onclick="fetchWeatherAlerts()" style="width: 90%; margin: 10px auto; display: block;">Refresh Alerts</button>
+  </div>
 
   <!-- Denver GSOC Time -->
   <div id="denver-time">
@@ -144,11 +163,6 @@
 
   <!-- Timezone boxes -->
   <div id="timezone-time-container"></div>
-
-  <!-- Weather Alerts -->
-  <div id="alert-feed">
-    Loading weather alerts...
-  </div>
 
   <!-- Map Wrapper -->
   <div id="map-wrapper">
